@@ -4,11 +4,12 @@ import asyncio
 import aioredis
 import discord
 import logging
-
 from typing import Optional
 
 from . import config
 from . import commands
+from . import api
+from .snippet import Snippet, SnippetNotFound
 
 logging.basicConfig(level=logging.INFO)
 bot_root_logger = logging.getLogger("bot")
@@ -74,6 +75,21 @@ class BasilClient(discord.Client):
 
         return await commands.dispatch(self, msg)
 
+    async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent):
+        channel_id = payload.channel_id
+        msg_id = payload.message_id
+
+        try:
+            snippet = await Snippet.load(self.redis, msg_id)
+        except SnippetNotFound:
+            return
+
+        channel: discord.abc.Messageable = await self.fetch_channel(channel_id)
+        message: discord.Message = await channel.fetch_message(msg_id)
+
+        snippet.content = message.content
+        await snippet.save(self.redis)
+
 
 def main():
     client = BasilClient(
@@ -95,4 +111,5 @@ def main():
     )
     bot_root_logger.addHandler(handler)
 
-    return asyncio.run(client.start(config.get().token))
+    api.api_app.add_task(client.start(config.get().token))
+    return api.api_app.run(host="0.0.0.0", port=8080)

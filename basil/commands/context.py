@@ -46,7 +46,7 @@ class CommandContext(object):
         else:
             return False
 
-    async def reply(self, content: str, as_reply=True, **kwargs) -> discord.Message:
+    async def reply(self, content: str, as_reply=True, ephemeral=False, **kwargs) -> discord.Message:
         if as_reply:
             return await self.channel.send(
                 content=content,

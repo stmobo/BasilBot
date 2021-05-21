@@ -142,3 +142,6 @@ async def dispatch(client: main.BasilClient, msg: discord.Message):
             "I seem to have run into an unexpected error while processing that command.\nIf you see any of my developers, could you ask them to check the logs? Sorry!"
         )
         raise
+
+
+from . import snippet
