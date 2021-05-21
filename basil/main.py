@@ -50,7 +50,7 @@ class BasilClient(discord.Client):
             )
         )
 
-        self.redis = await aioredis.create_redis(config.primary_redis_url)
+        self.redis = await aioredis.create_redis(config.get().primary_redis_url)
 
         if config.get().maintenance_mode:
             await self.change_presence(
@@ -91,7 +91,8 @@ class BasilClient(discord.Client):
         await snippet.save(self.redis)
 
 
-def main():
+@api.api_app.before_server_start
+async def start_bot(app, loop):
     client = BasilClient(
         activity=discord.CustomActivity("Starting..."), intents=INTENTS
     )
@@ -112,4 +113,7 @@ def main():
     bot_root_logger.addHandler(handler)
 
     api.api_app.add_task(client.start(config.get().token))
+
+
+def main():
     return api.api_app.run(host="0.0.0.0", port=8080)

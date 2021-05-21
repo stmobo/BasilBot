@@ -2,15 +2,10 @@ from __future__ import annotations
 
 import aioredis
 import discord
-from discord_markdown import discord_markdown
-from functools import partial
-import re
 from typing import Optional, Union
 import urllib
 
 from .commands import CommandContext
-
-EMOJI_RE = r"\<(a?)\:([^\:]+)\:(\d+)\>"
 
 
 class SnippetNotFound(Exception):
@@ -19,21 +14,6 @@ class SnippetNotFound(Exception):
 
 class InvalidMessageURL(Exception):
     pass
-
-
-def replace_emoji(match: re.Match) -> str:
-    animated = match[1] == "a"
-    name = match[2]
-    emoji_id = int(match[3])
-
-    url = "https://cdn.discordapp.com/emojis/" + str(emoji_id)
-
-    if animated:
-        url += ".gif"
-    else:
-        url += ".png"
-
-    return '<img src="{src}" alt="{alt}">'.format(src=url, alt=name)
 
 
 class Snippet:
@@ -88,8 +68,11 @@ class Snippet:
         except AttributeError:
             pass
 
-        content = redis.get("snippet:" + str(message_id) + ":content", encoding="utf-8")
-        author_id = redis.get(
+        content = await redis.get(
+            "snippet:" + str(message_id) + ":content", encoding="utf-8"
+        )
+
+        author_id = await redis.get(
             "snippet:" + str(message_id) + ":author", encoding="utf-8"
         )
 
@@ -110,7 +93,3 @@ class Snippet:
         tr.set("snippet:" + str(self.message_id) + ":content", self.content)
         tr.set("snippet:" + str(self.message_id) + ":author", str(self.author_id))
         await tr.execute()
-
-    def render(self) -> str:
-        html: str = discord_markdown.convert_to_html(self.content)
-        return re.sub(EMOJI_RE, replace_emoji, html)

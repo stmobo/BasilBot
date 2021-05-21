@@ -2,12 +2,19 @@ version: '3.7'
 
 # Configuration for Basil testing / development:
 services:
+    web:
+        build: ./dev-web
+        restart: always
+        volumes:
+            - ./static:/usr/share/nginx/html
+        ports:
+            - 8080:80
+        depends_on:
+            - basil
     basil:
         build: ./
         volumes:
             - ./test-config:/etc/basil
-        ports:
-            - 8080:8500
         depends_on:
             - redis
     redis:
