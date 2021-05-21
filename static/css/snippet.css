@@ -1,8 +1,59 @@
-#snippet-content {
+body {
+    background-color: #36393f;
+    color: #dcddde;
+
+    max-width: 72rem;
+    margin: auto;
+    padding: 0 .25rem;
+}
+
+.series-header {
+    margin: 1.5rem 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.snippet-title {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    font-size: 3.5rem;
+}
+
+.snippet-display-name {
+    display: inline;
+    font-size: 2.25rem;
+    margin: 0;
+}
+
+.snippet-user-name {
+    display: inline;
+    font-size: 1.15rem;
+    margin: 0;
+}
+
+.snippet-user-name::before {
+    content: "(";
+}
+
+.snippet-user-name::after {
+    content: ")";
+}
+
+.snippet-container {
+    margin: 1.5rem 0;
+}
+
+.snippet-separator {
+    margin: 0 auto;
+    width: 100%;
+}
+
+.snippet {
     line-height: 1.375rem;
 }
 
 .d-emoji {
-    width: 1.375rem;
+    width: 1.625rem;
     vertical-align: bottom;
 }

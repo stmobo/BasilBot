@@ -112,8 +112,9 @@ async def start_bot(app, loop):
     )
     bot_root_logger.addHandler(handler)
 
-    api.api_app.add_task(client.start(config.get().token))
+    app.ctx.client = client
+    app.add_task(client.start(config.get().token))
 
 
-def main():
+def app_main():
     return api.api_app.run(host="0.0.0.0", port=8080)

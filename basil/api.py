@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 import aioredis
+import discord
 from sanic import Sanic, Request, response, exceptions
 from jinja2 import Environment, PackageLoader, select_autoescape
 
 from . import config
 from .snippet import Snippet, SnippetNotFound
+from .series import Series, SeriesNotFound
 
 api_app = Sanic("Basil")
 env = Environment(loader=PackageLoader("basil"), autoescape=select_autoescape())
 snippet_template = env.get_template("snippet.html")
+series_template = env.get_template("series.html")
 
 
 @api_app.before_server_start
@@ -35,4 +38,30 @@ async def render_snippet(_req: Request, msg_id: int):
         raise exceptions.NotFound("Could not find snippet " + msg_id)
 
     rendered = snippet_template.render(snippet_name="Snippet", snippet_id=msg_id)
+    return response.html(rendered)
+
+
+@api_app.get("/series/<author_id:int>/<name>")
+async def render_series(_req: Request, author_id: int, name: str):
+    try:
+        series = await Series.load(api_app.ctx.redis, author_id, name)
+    except SnippetNotFound:
+        raise exceptions.NotFound(
+            "Could not find series " + name + " from author ID " + str(author_id)
+        )
+
+    client: BasilClient = api_app.ctx.client
+    primary_server: discord.Guild = await client.fetch_guild(
+        config.get().primary_server_id
+    )
+    member: discord.Member = await primary_server.fetch_member(author_id)
+
+    rendered = series_template.render(
+        snippets=series.snippets,
+        series_name=series.name,
+        series_title=series.title,
+        display_name=member.display_name,
+        username=member.name,
+        discriminator=member.discriminator,
+    )
     return response.html(rendered)

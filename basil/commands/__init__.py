@@ -138,7 +138,7 @@ async def dispatch(client: main.BasilClient, msg: discord.Message):
     try:
         return await cmd_obj(ctx, final_args)
     except Exception:
-        return await ctx.reply(
+        await ctx.reply(
             "I seem to have run into an unexpected error while processing that command.\nIf you see any of my developers, could you ask them to check the logs? Sorry!"
         )
         raise

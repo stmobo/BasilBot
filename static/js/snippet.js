@@ -1,5 +1,5 @@
 function loadSnippet(snippet_id) {
-    var container = document.getElementById("snippet-content");
+    var container = document.getElementById("snippet-" + snippet_id);
     container.innerHTML = "<i>Loading...</i>";
 
     fetch("/api/snippet/" + snippet_id).then(function (response) {

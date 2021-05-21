@@ -18,6 +18,7 @@ class Config(object):
             "maintenance_mode": False,
             "management_role_name": "snippet manager",
             "discord_log": Path("/var/log/basil/discord.log"),
+            "primary_server_id": 783787827061063710,
         }
 
         self.load()
