@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import aioredis
 import discord
 from typing import Tuple
 
@@ -26,6 +27,10 @@ class CommandContext(object):
     @property
     def user(self) -> discord.Member:
         return self.message.author
+
+    @property
+    def redis(self) -> aioredis.Redis:
+        return self.client.redis
 
     @property
     def authorized(self) -> bool:

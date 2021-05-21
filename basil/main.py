@@ -1,18 +1,9 @@
 from __future__ import annotations
 
 import asyncio
-import aiohttp
 import aioredis
 import discord
-import hashlib
-import re
-import sys
 import logging
-import io
-from collections import deque
-import unicodedata as ucd
-import os.path as osp
-import traceback
 
 from typing import Optional
 
@@ -58,10 +49,16 @@ class BasilClient(discord.Client):
             )
         )
 
+        self.redis = await aioredis.create_redis(config.primary_redis_url)
+
         if config.get().maintenance_mode:
-            await self.change_presence(activity=discord.CustomActivity("Maintenance Mode"))
+            await self.change_presence(
+                activity=discord.CustomActivity("Maintenance Mode")
+            )
         else:
-            await self.change_presence(activity=discord.CustomActivity("Organizing Snippets"))
+            await self.change_presence(
+                activity=discord.CustomActivity("Organizing Snippets")
+            )
 
         self.ready = True
 
@@ -79,7 +76,9 @@ class BasilClient(discord.Client):
 
 
 def main():
-    client = BasilClient(activity=discord.CustomActivity("Starting..."), intents=INTENTS)
+    client = BasilClient(
+        activity=discord.CustomActivity("Starting..."), intents=INTENTS
+    )
 
     # Initialize logging handlers:
     handler = logging.FileHandler(

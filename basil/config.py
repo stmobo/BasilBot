@@ -46,7 +46,7 @@ class Config(object):
     def save(self):
         with self.config_file.open("w", encoding="utf-8") as f:
             json.dump(self.config, f, indent=4)
-    
+
     def __getattr__(self, name):
         return self._config[name]
 

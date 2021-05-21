@@ -79,7 +79,10 @@ class CommandRouter(object):
         return (name in self.shortcuts) or (name in self.children)
 
     def route(
-        self, context: CommandContext, args: Tuple[str], cur_cmd_path: Tuple[str] = tuple()
+        self,
+        context: CommandContext,
+        args: Tuple[str],
+        cur_cmd_path: Tuple[str] = tuple(),
     ) -> Tuple[Command, Tuple[str]]:
         """Route a user command message to its final matching command.
 
@@ -164,7 +167,10 @@ class Command(CommandRouter):
         self.needs_cmd_obj: bool = needs_cmd_obj
 
     def route(
-        self, context: CommandContext, args: Tuple[str], cur_cmd_path: Tuple[str] = tuple()
+        self,
+        context: CommandContext,
+        args: Tuple[str],
+        cur_cmd_path: Tuple[str] = tuple(),
     ) -> Tuple[Command, Tuple[str]]:
         if self.authorized_only and not context.authorized:
             if self.hidden == "unauthorized":

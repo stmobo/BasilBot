@@ -19,6 +19,7 @@ from .context import CommandContext
 COMMANDS = CommandRouter("")
 CMD_REGEX = r"\"([^\"]+)\"|\'([^\']+)\'|\`\`\`([^\`]+)\`\`\`|\`([^\`]+)\`|(\S+)"
 
+
 def command(
     name: str,
     *,
@@ -80,7 +81,7 @@ async def dispatch(client: main.BasilClient, msg: discord.Message):
     _prefixes = (
         summon_prefix.casefold(),
         "<@" + str(client.user.id) + ">",
-        "<@!" + str(client.user.id) + ">"
+        "<@!" + str(client.user.id) + ">",
     )
 
     for prefix in _prefixes:
