@@ -10,8 +10,20 @@ from ..series import Series, SeriesNotFound
 from .. import config
 
 
-@command("register", summary="Save or update a snippet series.")
+@command("register")
 async def register_snippet(ctx: CommandContext, args: Tuple[str], cmd: Command):
+    """Save or update a snippet series.
+
+    **Usage:** `b!register [series tag]`
+    ℹ️ This command must be used as a reply to a snippet you have posted.
+
+    This command adds snippets to the series with the given tag name, creating
+    it if it does not already exist.
+
+    This command will follow snippet chains and add them in-order to the series
+    as necessary.
+    """
+
     if len(args) < 1:
         return await ctx.reply(
             "**USAGE:** `"
@@ -81,22 +93,41 @@ async def register_snippet(ctx: CommandContext, args: Tuple[str], cmd: Command):
     series.snippets.extend(reversed(new_snippets))
     await series.save(ctx)
 
+    url = urllib.parse.urljoin(
+        config.get().api_base_url, "/series/" + urllib.parse.quote(name)
+    )
+
     if new_series:
-        return await ctx.reply(
-            "✅  Created series `{}` with {} snippets.".format(
-                name, len(series.snippets)
+        await ctx.reply(
+            "✅  Created series `{}` with {} snippet{}.\n**Link:** {}".format(
+                name,
+                len(series.snippets),
+                ("s" if len(series.snippets) > 1 else ""),
+                url,
             )
         )
     else:
-        return await ctx.reply(
-            "✅  Appended {} new snippets to series `{}`.".format(
-                len(new_snippets), name
+        await ctx.reply(
+            "✅  Appended {} new snippet{} to series `{}`.\n**Link:** ".format(
+                len(new_snippets), ("s" if len(new_snippets) > 1 else ""), name, url
             )
         )
 
+    if " " in name:
+        await ctx.reply(
+            "⚠️  **Warning:** Your snippet tag has spaces in it. You'll need to **surround the tag name with quotes** if you're using it in other commands!"
+        )
 
-@command("title", summary="Set the title of a series.")
+
+@command("title")
 async def set_title(ctx: CommandContext, args: Tuple[str], cmd: Command):
+    """Set the title of a series.
+
+    **Usage:** `b!title [series tag] [series title]`
+    ⚠️ Series tags and titles must be surrounded by quotes if they contain spaces!
+
+    (example: `b!title my_series "My Series"`)
+    """
     if len(args) != 2:
         return await ctx.reply(
             "**USAGE:** `"
@@ -124,8 +155,15 @@ async def set_title(ctx: CommandContext, args: Tuple[str], cmd: Command):
     )
 
 
-@command("rename", summary="Change the tag of a series.")
+@command("rename")
 async def rename_series(ctx: CommandContext, args: Tuple[str], cmd: Command):
+    """Change the tag for a series you own.
+
+    **Usage:** `b!rename [old series tag] [new series tag]`
+    ⚠️  Series tags must be surrounded by quotes if they contain spaces!
+    ℹ️  Moderators can rename any series, even ones they do not own.
+    """
+
     if len(args) != 2:
         return await ctx.reply(
             "**USAGE:** `"
@@ -145,14 +183,29 @@ async def rename_series(ctx: CommandContext, args: Tuple[str], cmd: Command):
     if series.author_id != ctx.user.id and not ctx.authorized:
         return await ctx.reply("❌  That series does not belong to you.")
 
+    try:
+        await Series.load(ctx, new_tag)
+        return await ctx.reply(
+            "❌  There already exists a series going by the tag `{}`!".format(new_tag)
+        )
+    except SeriesNotFound:
+        pass
+
     await series.rename(ctx, new_tag)
     return await ctx.reply(
         "✅  Renamed series tag `{}` to `{}`.".format(old_tag, new_tag)
     )
 
 
-@command("delete", summary="Change the tag of a series.")
-async def rename_series(ctx: CommandContext, args: Tuple[str], cmd: Command):
+@command("delete")
+async def delete_series(ctx: CommandContext, args: Tuple[str], cmd: Command):
+    """Delete a series you own.
+
+    **Usage:** `b!delete [series tag]`
+    ⚠️  Series tags must be surrounded by quotes if they contain spaces!
+    ℹ️  Moderators can delete any series, even ones they do not own.
+    """
+
     if len(args) != 1:
         return await ctx.reply(
             "**USAGE:** `" + config.get().summon_prefix + "delete [series tag]`",
@@ -174,8 +227,13 @@ async def rename_series(ctx: CommandContext, args: Tuple[str], cmd: Command):
     return await ctx.reply("✅  Deleted series `{}`.".format(tag))
 
 
-@command("link", summary="Get a link to a series.")
+@command("link")
 async def get_link(ctx: CommandContext, args: Tuple[str], cmd: Command):
+    """Get a link to a series.
+
+    **Usage:** `b!link [series tag]`
+    ⚠️  Series tags must be surrounded by quotes if they contain spaces!
+    """
     if len(args) != 1:
         return await ctx.reply(
             "**USAGE:** `" + config.get().summon_prefix + "link [series tag]`",
@@ -190,5 +248,7 @@ async def get_link(ctx: CommandContext, args: Tuple[str], cmd: Command):
             "❌  There exists no series going by the tag `{}`.".format(tag)
         )
 
-    url = urllib.parse.urljoin(config.get().api_base_url, "/series/" + tag)
+    url = urllib.parse.urljoin(
+        config.get().api_base_url, "/series/" + urllib.parse.quote(tag)
+    )
     return await ctx.reply("ℹ️  Link to series: " + url, ephemeral=False)

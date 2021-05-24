@@ -4,6 +4,7 @@ import aioredis
 import discord
 from sanic import Sanic, Request, response, exceptions
 from jinja2 import Environment, PackageLoader, select_autoescape
+import urllib.parse
 
 from . import config
 from .snippet import Snippet, SnippetNotFound
@@ -43,6 +44,8 @@ async def render_snippet(_req: Request, msg_id: int):
 
 @api_app.get("/series/<name>")
 async def render_series(_req: Request, name: str):
+    name = urllib.parse.unquote(name)
+
     try:
         series = await Series.load(api_app.ctx.redis, name)
     except SeriesNotFound:
