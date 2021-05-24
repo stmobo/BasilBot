@@ -21,7 +21,7 @@ async def setup_redis(app, loop):
 
 
 @api_app.get("/api/snippet/<msg_id:int>")
-async def render_snippet(_req: Request, msg_id: int):
+async def get_snippet(_req: Request, msg_id: int):
     try:
         snippet = await Snippet.load(api_app.ctx.redis, msg_id)
     except SnippetNotFound:
@@ -41,20 +41,18 @@ async def render_snippet(_req: Request, msg_id: int):
     return response.html(rendered)
 
 
-@api_app.get("/series/<author_id:int>/<name>")
-async def render_series(_req: Request, author_id: int, name: str):
+@api_app.get("/series/<name>")
+async def render_series(_req: Request, name: str):
     try:
-        series = await Series.load(api_app.ctx.redis, author_id, name)
-    except SnippetNotFound:
-        raise exceptions.NotFound(
-            "Could not find series " + name + " from author ID " + str(author_id)
-        )
+        series = await Series.load(api_app.ctx.redis, name)
+    except SeriesNotFound:
+        raise exceptions.NotFound("Could not find series " + name)
 
-    client: BasilClient = api_app.ctx.client
+    client = api_app.ctx.client
     primary_server: discord.Guild = await client.fetch_guild(
         config.get().primary_server_id
     )
-    member: discord.Member = await primary_server.fetch_member(author_id)
+    member: discord.Member = await primary_server.fetch_member(series.author_id)
 
     rendered = series_template.render(
         snippets=series.snippets,

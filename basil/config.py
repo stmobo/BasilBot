@@ -19,6 +19,7 @@ class Config(object):
             "management_role_name": "snippet manager",
             "discord_log": Path("/var/log/basil/discord.log"),
             "primary_server_id": 783787827061063710,
+            "api_base_url": "http://127.0.0.1/",
         }
 
         self.load()

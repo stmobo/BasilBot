@@ -8,11 +8,7 @@ from .. import main, config
 
 
 class CommandContext(object):
-    def __init__(
-        self,
-        client: main.BasilClient,
-        message: discord.Message
-    ):
+    def __init__(self, client: main.BasilClient, message: discord.Message):
         self.client: main.BasilClient = client
         self.message: discord.Message = message
 
@@ -46,15 +42,17 @@ class CommandContext(object):
         else:
             return False
 
-    async def reply(self, content: str, as_reply=True, ephemeral=False, **kwargs) -> discord.Message:
+    async def reply(
+        self, content: str, as_reply=True, ephemeral=True, **kwargs
+    ) -> discord.Message:
         if as_reply:
-            return await self.channel.send(
-                content=content,
-                reference=self.message,
-                mention_author=True,
-                **kwargs
+            reply_msg = await self.channel.send(
+                content=content, reference=self.message, mention_author=True, **kwargs
             )
         else:
-            return await self.channel.send(content=content, **kwargs)
+            reply_msg = await self.channel.send(content=content, **kwargs)
 
+        if ephemeral:
+            await reply_msg.delete(delay=7.0)
 
+        return reply_msg
