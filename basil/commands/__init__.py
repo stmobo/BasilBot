@@ -145,3 +145,4 @@ async def dispatch(client: main.BasilClient, msg: discord.Message):
 
 
 from . import snippet
+from . import help_cmd
