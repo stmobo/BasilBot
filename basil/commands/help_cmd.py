@@ -1,4 +1,4 @@
-from . import command, COMMANDS, CMD_GROUPS, CMD_GROUP_INFO
+from . import command, COMMANDS
 from .router import (
     Command,
     CommandNotFoundError,
