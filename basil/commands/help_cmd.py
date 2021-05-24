@@ -16,7 +16,7 @@ async def specific_cmd_help(ctx: CommandContext, args: Tuple[str], _cmd: Command
 
     try:
         cmd, _ = COMMANDS.route(ctx.message, args)
-        return await ctx.reply(cmd.help_text(ctx.authorized))
+        return await ctx.reply(cmd.help_text(ctx.authorized), ephemeral=False)
     except CommandNotFoundError:
         return await ctx.reply(
             "I can't find any commands like that. Maybe try checking the general help section?",
@@ -27,7 +27,7 @@ async def specific_cmd_help(ctx: CommandContext, args: Tuple[str], _cmd: Command
 
         for name, _ in e.args[1]:
             lines.append("-    `" + summon_prefix + cur_path + " " + name + "`")
-        return await ctx.reply("\n".join(lines))
+        return await ctx.reply("\n".join(lines), ephemeral=False)
     except CommandNotAuthorizedError:
         return await ctx.reply("You aren't authorized to access that command.")
 
@@ -47,4 +47,4 @@ async def help_cmd(ctx: CommandContext, args: Tuple[str], cmd: Command):
     for cmd in COMMANDS.visible_subrouters(ctx.authorized):
         lines.append("    " + cmd.summary_entry())
 
-    return await ctx.reply("\n".join(lines))
+    return await ctx.reply("\n".join(lines), ephemeral=False)
