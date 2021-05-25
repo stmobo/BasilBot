@@ -93,25 +93,24 @@ async def register_snippet(ctx: CommandContext, args: Tuple[str], cmd: Command):
     series.snippets.extend(reversed(new_snippets))
     await series.save(ctx)
 
-    url = urllib.parse.urljoin(
-        config.get().api_base_url, "/series/" + urllib.parse.quote(name)
-    )
-
     if new_series:
         await ctx.reply(
-            "✅  Created series `{}` with {} snippet{}.\n**Link:** {}".format(
-                name,
-                len(series.snippets),
-                ("s" if len(series.snippets) > 1 else ""),
-                url,
+            "✅  Created series `{}` with {} snippet{}.".format(
+                name, len(series.snippets), ("s" if len(series.snippets) > 1 else "")
             )
         )
     else:
         await ctx.reply(
-            "✅  Appended {} new snippet{} to series `{}`.\n**Link:** ".format(
-                len(new_snippets), ("s" if len(new_snippets) > 1 else ""), name, url
+            "✅  Appended {} new snippet{} to series `{}`.".format(
+                len(new_snippets), ("s" if len(new_snippets) > 1 else ""), name
             )
         )
+
+    url = urllib.parse.urljoin(
+        config.get().api_base_url, "/series/" + urllib.parse.quote(name)
+    )
+
+    await ctx.reply("ℹ️  **Link to series:** " + url, mention_author=False, ephemeral=False)
 
     if " " in name:
         await ctx.reply(
@@ -251,4 +250,4 @@ async def get_link(ctx: CommandContext, args: Tuple[str], cmd: Command):
     url = urllib.parse.urljoin(
         config.get().api_base_url, "/series/" + urllib.parse.quote(tag)
     )
-    return await ctx.reply("ℹ️  Link to series: " + url, ephemeral=False)
+    return await ctx.reply("ℹ️  **Link to series:** " + url, ephemeral=False)
