@@ -266,7 +266,8 @@ async def reindex(ctx: CommandContext, args: Tuple[str], cmd: Command):
 
     tr = ctx.redis.multi_exec()
     tr.delete(SERIES_INDEX_KEY)
-    async for key in ctx.redis.iscan(match="series:*:snippets"):
+    async for key_bytes in ctx.redis.iscan(match="series:*:snippets"):
+        key: str = key_bytes.decode("utf-8")
         tag = key.split(":", 2)[1]
         tr.sadd(SERIES_INDEX_KEY, tag)
         n_tags += 1

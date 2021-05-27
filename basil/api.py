@@ -76,7 +76,8 @@ async def get_all_series(_req: Request):
     )
 
     ret = []
-    async for tag in api_app.ctx.redis.sscan(SERIES_INDEX_KEY):
+    async for tag_bytes in api_app.ctx.redis.sscan(SERIES_INDEX_KEY):
+        tag: str = tag_bytes.decode("utf-8")
         try:
             series = await Series.load(api_app.ctx.redis, tag)
         except SeriesNotFound:
