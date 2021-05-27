@@ -83,7 +83,7 @@ async def get_all_series(_req: Request):
         ret.append(
             {
                 "tag": tag,
-                "title": series.title,
+                "title": series.title.strip(),
                 "n_snippets": len(series.snippets),
                 "author": {
                     "id": series.author_id,
