@@ -118,8 +118,13 @@ function renderSeriesList() {
         });
 
         var indexContainer = $("#index-container");
+        var headerNav = $("#index-nav");
         for (let elem of indexElems) {
             indexContainer.append(elem.root);
+
+            let navItem = $("<li>", { "class": "nav-item" });
+            addSubelement(navItem, "a", { "class": "nav-link", "href": "#index-" + elem.headerLetter, "text": elem.headerLetter });
+            headerNav.append(navItem);
         }
     });
 }
