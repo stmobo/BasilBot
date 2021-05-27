@@ -52,10 +52,8 @@ async def render_series(_req: Request, name: str):
         raise exceptions.NotFound("Could not find series " + name)
 
     client: discord.Client = api_app.ctx.client
-    primary_server: discord.Guild = await client.get_guild(
-        config.get().primary_server_id
-    )
-    member: discord.Member = await primary_server.get_member(series.author_id)
+    primary_server: discord.Guild = client.get_guild(config.get().primary_server_id)
+    member: discord.Member = primary_server.get_member(series.author_id)
 
     rendered = series_template.render(
         snippets=series.snippets,
@@ -71,9 +69,7 @@ async def render_series(_req: Request, name: str):
 @api_app.get("/series")
 async def get_all_series(_req: Request):
     client: discord.Client = api_app.ctx.client
-    primary_server: discord.Guild = await client.get_guild(
-        config.get().primary_server_id
-    )
+    primary_server: discord.Guild = client.get_guild(config.get().primary_server_id)
 
     ret = []
     async for tag_bytes in api_app.ctx.redis.sscan(SERIES_INDEX_KEY):
@@ -83,7 +79,7 @@ async def get_all_series(_req: Request):
         except SeriesNotFound:
             continue
 
-        member: discord.Member = await primary_server.get_member(series.author_id)
+        member: discord.Member = primary_server.get_member(series.author_id)
         ret.append(
             {
                 "tag": tag,

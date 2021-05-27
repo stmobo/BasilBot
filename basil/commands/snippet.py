@@ -81,7 +81,7 @@ async def register_snippet(ctx: CommandContext, args: Tuple[str], cmd: Command):
             break
 
         try:
-            channel = await ctx.client.get_channel(channel_id)
+            channel = ctx.client.get_channel(channel_id)
         except discord.NotFound:
             break
 
