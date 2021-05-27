@@ -42,31 +42,7 @@ async def render_snippet(_req: Request, msg_id: int):
     return response.html(rendered)
 
 
-@api_app.get("/series/<name>")
-async def render_series(_req: Request, name: str):
-    name = urllib.parse.unquote(name)
-
-    try:
-        series = await Series.load(api_app.ctx.redis, name)
-    except SeriesNotFound:
-        raise exceptions.NotFound("Could not find series " + name)
-
-    client: discord.Client = api_app.ctx.client
-    primary_server: discord.Guild = client.get_guild(config.get().primary_server_id)
-    member: discord.Member = primary_server.get_member(series.author_id)
-
-    rendered = series_template.render(
-        snippets=series.snippets,
-        series_name=series.name,
-        series_title=series.title,
-        display_name=member.display_name,
-        username=member.name,
-        discriminator=member.discriminator,
-    )
-    return response.html(rendered)
-
-
-@api_app.get("/series")
+@api_app.get("/api/series")
 async def get_all_series(_req: Request):
     client: discord.Client = api_app.ctx.client
     primary_server: discord.Guild = client.get_guild(config.get().primary_server_id)
@@ -97,3 +73,27 @@ async def get_all_series(_req: Request):
         )
 
     return response.json(ret)
+
+
+@api_app.get("/series/<name>")
+async def render_series(_req: Request, name: str):
+    name = urllib.parse.unquote(name)
+
+    try:
+        series = await Series.load(api_app.ctx.redis, name)
+    except SeriesNotFound:
+        raise exceptions.NotFound("Could not find series " + name)
+
+    client: discord.Client = api_app.ctx.client
+    primary_server: discord.Guild = client.get_guild(config.get().primary_server_id)
+    member: discord.Member = primary_server.get_member(series.author_id)
+
+    rendered = series_template.render(
+        snippets=series.snippets,
+        series_name=series.name,
+        series_title=series.title,
+        display_name=member.display_name,
+        username=member.name,
+        discriminator=member.discriminator,
+    )
+    return response.html(rendered)
