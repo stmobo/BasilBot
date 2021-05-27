@@ -14,12 +14,12 @@ function SeriesEntry(series) {
 
     this.display_name = addSubelement(root, "span", {
         "class": "series-display-name",
-        "text": "by " + series.author.display_name
+        "text": " by " + series.author.display_name
     });
 
     this.username = addSubelement(root, "span", {
         "class": "series-username",
-        "text": series.author.username + "#" + series.author.discriminator
+        "text": " (" + series.author.username + "#" + series.author.discriminator + ")"
     });
 
     if (series.updated) {
