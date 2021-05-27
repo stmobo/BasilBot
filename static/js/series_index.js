@@ -6,7 +6,7 @@ function addSubelement(elem, type, opts) {
 }
 
 function SeriesEntry(series) {
-    var root = $("li", { "class": "series-entry" });
+    var root = $("<li>", { "class": "series-entry" });
     this.root = root;
     this.series = series;
 
@@ -57,7 +57,7 @@ function SeriesEntry(series) {
 function SeriesList(headerLetter, seriesList) {
     this.headerLetter = headerLetter;
     this.seriesList = seriesList;
-    this.root = $("div", { "class": "series-list-container" });
+    this.root = $("<div>", { "class": "series-list-container" });
 
     this.header = addSubelement(this.root, "h2", {
         "class": "series-list-header",
