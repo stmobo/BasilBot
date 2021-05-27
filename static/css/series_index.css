@@ -7,12 +7,19 @@ body {
     padding: 0 .25rem;
 }
 
+#index-title, #index-nav {
+    margin: 0 auto;
+}
+
 .index-nav-item {
     border: 2px solid;
     border-radius: 13px;
-    margin: 0 1rem;
+    margin: 0 0.3rem;
 }
 
 .index-nav-item .nav-link {
+    display: inline-block;
     padding: .15rem 1rem;
+    min-width: 3rem;
+    text-align: center;
 }
