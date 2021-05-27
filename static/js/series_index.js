@@ -94,7 +94,7 @@ function renderSeriesList() {
         /* Construct index based on first letter of titles */
         var index = {};
         for (let series of seriesData) {
-            let firstLetter = series.title[0];
+            let firstLetter = series.title[0].toUpperCase();
             if (!index[firstLetter]) {
                 index[firstLetter] = [];
             }
