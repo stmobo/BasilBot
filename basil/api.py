@@ -91,7 +91,8 @@ async def get_all_series(_req: Request):
                     "display_name": member.display_name,
                     "discriminator": member.discriminator,
                 },
-                "url": api_app.url_for("render_series", name=urllib.parse.quote(tag))
+                "url": api_app.url_for("render_series", name=urllib.parse.quote(tag)),
+                "updated": series.update_time,
             }
         )
 

@@ -4,6 +4,7 @@ import aioredis
 import discord
 import json
 from typing import List, Optional, Union
+import time
 
 from .commands import CommandContext
 from .snippet import Snippet
@@ -23,6 +24,7 @@ class Series:
         name: str,
         snippets: List[Snippet],
         title: Optional[str] = None,
+        update_time: Optional[float] = None,
     ):
         if title is None:
             title = name
@@ -31,6 +33,7 @@ class Series:
         self.author_id: int = author_id
         self.snippets: List[Snippet] = snippets
         self.title: str = title
+        self.update_time: Optional[float] = update_time
 
     @property
     def redis_prefix(self) -> str:
@@ -63,13 +66,20 @@ class Series:
 
         author_id = await redis.get(redis_prefix + ":author", encoding="utf-8")
 
+        update_time = await redis.get(redis_prefix + ":updated", encoding="utf-8")
+
+        try:
+            update_time = float(update_time)
+        except TypeError:
+            pass
+
         snippet_ids = json.loads(snippet_ids)
         snippets = []
         for msg_id in snippet_ids:
             snippet = await Snippet.load(redis, msg_id)
             snippets.append(snippet)
 
-        return cls(int(author_id), name, snippets, title)
+        return cls(int(author_id), name, snippets, title, update_time)
 
     async def save(self, redis_or_ctx: Union[aioredis.Redis, CommandContext]):
         redis: aioredis.Redis = redis_or_ctx
@@ -79,8 +89,8 @@ class Series:
         except AttributeError:
             pass
 
+        self.update_time = time.time()
         snippet_ids = [s.message_id for s in self.snippets]
-
         tr = redis.multi_exec()
 
         tr.set(
@@ -96,6 +106,7 @@ class Series:
         tr.sadd(SERIES_INDEX_KEY, self.name)
 
         tr.set(self.redis_prefix + ":author", str(self.author_id))
+        tr.set(self.redis_prefix + ":updated", str(self.update_time))
 
         await tr.execute()
 
@@ -111,6 +122,7 @@ class Series:
         tr.delete(self.redis_prefix + ":snippets")
         tr.delete(self.redis_prefix + ":title")
         tr.delete(self.redis_prefix + ":author")
+        tr.delete(self.redis_prefix + ":updated")
         tr.srem(SERIES_INDEX_KEY, self.name)
         await tr.execute()
 
@@ -141,6 +153,11 @@ class Series:
         tr.rename(
             self.redis_prefix + ":author",
             new_prefix + ":author",
+        )
+
+        tr.rename(
+            self.redis_prefix + ":updated",
+            new_prefix + ":updated",
         )
 
         tr.srem(SERIES_INDEX_KEY, self.name)
