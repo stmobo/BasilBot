@@ -6,3 +6,13 @@ body {
     margin: auto;
     padding: 0 .25rem;
 }
+
+.index-nav-item {
+    border: 2px solid;
+    border-radius: 13px;
+    margin: 0 1rem;
+}
+
+.index-nav-item .nav-link {
+    padding: .15rem 1rem;
+}
