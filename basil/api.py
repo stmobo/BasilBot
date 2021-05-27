@@ -72,7 +72,7 @@ async def get_all_series(_req: Request):
     primary_server: discord.Guild = client.get_guild(config.get().primary_server_id)
 
     ret = []
-    async for tag_bytes in api_app.ctx.redis.sscan(SERIES_INDEX_KEY):
+    async for tag_bytes in api_app.ctx.redis.isscan(SERIES_INDEX_KEY):
         tag: str = tag_bytes.decode("utf-8")
         try:
             series = await Series.load(api_app.ctx.redis, tag)
