@@ -46,7 +46,7 @@ function SeriesEntry(series) {
         }
 
         this.lastUpdated = addSubelement(this.root, "span", {
-            "class": "series-update-time text-muted", "text": "Last updated " + format_str
+            "class": "series-update-time text-muted", "text": " — Last updated " + format_str
         });
     } else {
         this.lastUpdated = null;
