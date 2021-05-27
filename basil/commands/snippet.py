@@ -81,7 +81,7 @@ async def register_snippet(ctx: CommandContext, args: Tuple[str], cmd: Command):
             break
 
         try:
-            channel = await ctx.client.fetch_channel(channel_id)
+            channel = await ctx.client.get_channel(channel_id)
         except discord.NotFound:
             break
 
@@ -110,7 +110,9 @@ async def register_snippet(ctx: CommandContext, args: Tuple[str], cmd: Command):
         config.get().api_base_url, "/series/" + urllib.parse.quote(name)
     )
 
-    await ctx.reply("ℹ️  **Link to series:** " + url, mention_author=False, ephemeral=False)
+    await ctx.reply(
+        "ℹ️  **Link to series:** " + url, mention_author=False, ephemeral=False
+    )
 
     if " " in name:
         await ctx.reply(

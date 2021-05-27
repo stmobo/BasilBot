@@ -84,7 +84,7 @@ class BasilClient(discord.Client):
         except SnippetNotFound:
             return
 
-        channel: discord.abc.Messageable = await self.fetch_channel(channel_id)
+        channel: discord.abc.Messageable = await self.get_channel(channel_id)
         message: discord.Message = await channel.fetch_message(msg_id)
 
         snippet.content = message.content
