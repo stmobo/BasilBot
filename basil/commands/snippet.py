@@ -255,6 +255,17 @@ async def get_link(ctx: CommandContext, args: Tuple[str], cmd: Command):
     return await ctx.reply("ℹ️  **Link to series:** " + url, ephemeral=False)
 
 
+@command("index")
+async def get_index(ctx: CommandContext, args: Tuple[str], cmd: Command):
+    """Get a link to the series index.
+
+    **Usage:** `b!index`
+    """
+
+    url = urllib.parse.urljoin(config.get().api_base_url, "/series_index.html")
+    return await ctx.reply("ℹ️  **Link to series index:** " + url, ephemeral=False)
+
+
 @command("reindex", authorized_only=True, hidden="unauthorized")
 async def reindex(ctx: CommandContext, args: Tuple[str], cmd: Command):
     """Reindex all snippets.
