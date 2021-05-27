@@ -7,8 +7,12 @@ body {
     padding: 0 .25rem;
 }
 
-#index-title, #index-nav {
-    margin: 0 auto;
+#index-title {
+    text-align: center;
+}
+
+#index-nav {
+    justify-content: center;
 }
 
 .index-nav-item {
