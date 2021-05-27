@@ -109,7 +109,7 @@ async def dispatch(client: main.BasilClient, msg: discord.Message):
     # Route command:
 
     try:
-        cmd_obj, final_args = COMMANDS.route(msg, (cmd,) + tuple(args[1:]))
+        cmd_obj, final_args = COMMANDS.route(ctx, (cmd,) + tuple(args[1:]))
     except CommandNotFoundError:
         return await ctx.reply(
             "I can't find any commands like that. Maybe try checking the general help section?",

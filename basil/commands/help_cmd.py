@@ -15,7 +15,7 @@ async def specific_cmd_help(ctx: CommandContext, args: Tuple[str], _cmd: Command
     summon_prefix: str = config.get().summon_prefix
 
     try:
-        cmd, _ = COMMANDS.route(ctx.message, args)
+        cmd, _ = COMMANDS.route(ctx, args)
         return await ctx.reply(cmd.help_text(ctx.authorized), ephemeral=False)
     except CommandNotFoundError:
         return await ctx.reply(
