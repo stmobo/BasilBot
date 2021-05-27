@@ -45,7 +45,7 @@ function SeriesEntry(series) {
             format_str = n_days + (n_days === 1 ? ' day ago' : ' days ago');
         }
 
-        this.lastUpdated = addSubelement(this.footer, "span", {
+        this.lastUpdated = addSubelement(this.root, "span", {
             "class": "series-update-time text-muted", "text": "Last updated " + format_str
         });
     } else {
