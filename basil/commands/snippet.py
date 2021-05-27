@@ -6,7 +6,7 @@ import urllib.parse
 
 from . import command, CommandContext, Command
 from ..snippet import Snippet, SnippetNotFound
-from ..series import Series, SeriesNotFound
+from ..series import SERIES_INDEX_KEY, Series, SeriesNotFound
 from .. import config
 
 
@@ -253,3 +253,24 @@ async def get_link(ctx: CommandContext, args: Tuple[str], cmd: Command):
         config.get().api_base_url, "/series/" + urllib.parse.quote(tag)
     )
     return await ctx.reply("ℹ️  **Link to series:** " + url, ephemeral=False)
+
+
+@command("reindex", authorized_only=True, hidden="unauthorized")
+async def reindex(ctx: CommandContext, args: Tuple[str], cmd: Command):
+    """Reindex all snippets.
+
+    **Usage:** `b!reindex`
+    """
+
+    n_tags = 0
+
+    tr = ctx.redis.multi_exec()
+    tr.delete(SERIES_INDEX_KEY)
+    async for key in ctx.redis.iscan(match="series:*:snippets"):
+        tag = key.split(":", 2)[1]
+        tr.sadd(SERIES_INDEX_KEY, tag)
+        n_tags += 1
+
+    await tr.execute()
+
+    return await ctx.reply("✅  Reindexed " + str(n_tags) + " series tags.")

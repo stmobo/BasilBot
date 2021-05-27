@@ -9,6 +9,9 @@ from .commands import CommandContext
 from .snippet import Snippet
 
 
+SERIES_INDEX_KEY = "series_index"
+
+
 class SeriesNotFound(Exception):
     pass
 
@@ -90,6 +93,8 @@ class Series:
             self.title,
         )
 
+        tr.sadd(SERIES_INDEX_KEY, self.name)
+
         tr.set(self.redis_prefix + ":author", str(self.author_id))
 
         await tr.execute()
@@ -106,6 +111,7 @@ class Series:
         tr.delete(self.redis_prefix + ":snippets")
         tr.delete(self.redis_prefix + ":title")
         tr.delete(self.redis_prefix + ":author")
+        tr.srem(SERIES_INDEX_KEY, self.name)
         await tr.execute()
 
     async def rename(
@@ -136,6 +142,9 @@ class Series:
             self.redis_prefix + ":author",
             new_prefix + ":author",
         )
+
+        tr.srem(SERIES_INDEX_KEY, self.name)
+        tr.sadd(SERIES_INDEX_KEY, new_tag)
 
         await tr.execute()
         self.name = new_tag

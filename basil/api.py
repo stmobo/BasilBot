@@ -8,7 +8,7 @@ import urllib.parse
 
 from . import config
 from .snippet import Snippet, SnippetNotFound
-from .series import Series, SeriesNotFound
+from .series import Series, SeriesNotFound, SERIES_INDEX_KEY
 
 api_app = Sanic("Basil")
 env = Environment(loader=PackageLoader("basil"), autoescape=select_autoescape())
@@ -51,7 +51,7 @@ async def render_series(_req: Request, name: str):
     except SeriesNotFound:
         raise exceptions.NotFound("Could not find series " + name)
 
-    client = api_app.ctx.client
+    client: discord.Client = api_app.ctx.client
     primary_server: discord.Guild = await client.get_guild(
         config.get().primary_server_id
     )
@@ -66,3 +66,35 @@ async def render_series(_req: Request, name: str):
         discriminator=member.discriminator,
     )
     return response.html(rendered)
+
+
+@api_app.get("/series")
+async def get_all_series(_req: Request):
+    client: discord.Client = api_app.ctx.client
+    primary_server: discord.Guild = await client.get_guild(
+        config.get().primary_server_id
+    )
+
+    ret = []
+    async for tag in api_app.ctx.redis.sscan(SERIES_INDEX_KEY):
+        try:
+            series = await Series.load(api_app.ctx.redis, tag)
+        except SeriesNotFound:
+            continue
+
+        member: discord.Member = await primary_server.get_member(series.author_id)
+        ret.append(
+            {
+                "tag": tag,
+                "title": series.title,
+                "n_snippets": len(series.snippets),
+                "author": {
+                    "id": series.author_id,
+                    "username": member.name,
+                    "display_name": member.display_name,
+                    "discriminator": member.discriminator,
+                },
+            }
+        )
+
+    return response.json(ret)
