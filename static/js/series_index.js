@@ -117,8 +117,8 @@ function renderSeriesList() {
             }
         });
 
-        var indexContainer = $("#index-container");
-        var headerNav = $("#index-nav");
+        var indexContainer = $("#title-index");
+        var headerNav = $("#title-index-nav");
         for (let elem of indexElems) {
             indexContainer.append(elem.root);
 
