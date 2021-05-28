@@ -331,7 +331,7 @@ async def subscribe_to_series(ctx: CommandContext, args: Tuple[str], cmd: Comman
         await series.save(ctx, update_time=False)
 
         return await ctx.reply(
-            "✅  Unsubscribed series **{}** (`{}`).".format(series.title, tag)
+            "✅  Unsubscribed from series **{}** (`{}`).".format(series.title, tag)
         )
     else:
         return await ctx.reply("ℹ️  You are not subscribed to that series.")
