@@ -5,6 +5,7 @@ import discord
 from sanic import Sanic, Request, response, exceptions
 from jinja2 import Environment, PackageLoader, select_autoescape
 import urllib.parse
+from typing import Tuple, List
 
 from . import config
 from .snippet import Snippet, SnippetNotFound
@@ -14,6 +15,26 @@ api_app = Sanic("Basil")
 env = Environment(loader=PackageLoader("basil"), autoescape=select_autoescape())
 snippet_template = env.get_template("snippet.html")
 series_template = env.get_template("series.html")
+
+
+def get_member_names(
+    client: discord.Client, user_id: int
+) -> Tuple[List[str], str, str]:
+    display_names = set()
+    username = None
+    discriminator = None
+
+    for guild in client.guilds:
+        member: discord.Member = guild.get_member(user_id)
+
+        if member is None:
+            continue
+
+        display_names.add(member.display_name)
+        username = member.name
+        discriminator = member.discriminator
+
+    return sorted(display_names), username, discriminator
 
 
 @api_app.before_server_start
@@ -55,7 +76,9 @@ async def get_all_series(_req: Request):
         except SeriesNotFound:
             continue
 
-        member: discord.Member = primary_server.get_member(series.author_id)
+        display_names, username, discriminator = get_member_names(
+            client, series.author_id
+        )
         ret.append(
             {
                 "tag": tag,
@@ -63,9 +86,9 @@ async def get_all_series(_req: Request):
                 "n_snippets": len(series.snippets),
                 "author": {
                     "id": series.author_id,
-                    "username": member.name,
-                    "display_name": member.display_name,
-                    "discriminator": member.discriminator,
+                    "display_name": " / ".join(display_names),
+                    "username": username,
+                    "discriminator": discriminator,
                 },
                 "url": api_app.url_for("render_series", name=urllib.parse.quote(tag)),
                 "updated": series.update_time,
@@ -85,6 +108,8 @@ async def render_series(_req: Request, name: str):
         raise exceptions.NotFound("Could not find series " + name)
 
     client: discord.Client = api_app.ctx.client
+    display_names, username, discriminator = get_member_names(client, series.author_id)
+
     primary_server: discord.Guild = client.get_guild(config.get().primary_server_id)
     member: discord.Member = primary_server.get_member(series.author_id)
 
@@ -92,8 +117,8 @@ async def render_series(_req: Request, name: str):
         snippets=series.snippets,
         series_name=series.name,
         series_title=series.title,
-        display_name=member.display_name,
-        username=member.name,
-        discriminator=member.discriminator,
+        display_name=" / ".join(display_names),
+        username=username,
+        discriminator=discriminator,
     )
     return response.html(rendered)
