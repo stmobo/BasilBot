@@ -15,25 +15,20 @@
     <h1 id="page-title">Series Index</h1>
 
     <ul class="nav nav-tabs" id="index-tab" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="title-index-tab" data-bs-toggle="tab"
-                data-bs-target="#title-index-container" type="button" role="tab" aria-controls="home"
-                aria-selected="true">By Title</button>
+        <li class="nav-item">
+            <button class="nav-link active" id="title-index-tab">By Title</button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="author-index-tab" data-bs-toggle="tab"
-                data-bs-target="#author-index-container" type="button" role="tab" aria-controls="home"
-                aria-selected="true">By Author</button>
+            <button class="nav-link" id="author-index-tab">By Author</button>
         </li>
     </ul>
 
-    <div class="tab-content" id="indexes">
-        <div class="tab-pane fade show active" id="title-index-container" role="tabpanel"
-            aria-labelledby="title-index-tab">
+    <div id="index-tab-content">
+        <div id="title-index-container">
             <ul class="nav" id="title-index-nav"></ul>
             <div id="title-index"></div>
         </div>
-        <div class="tab-pane fade" id="author-index-container" role="tabpanel" aria-labelledby="author-index-tab">
+        <div id="author-index-container">
             <ul class="nav" id="author-index-nav"></ul>
             <div id="author-index"></div>
         </div>

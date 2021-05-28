@@ -157,25 +157,34 @@ function renderIndex(seriesData, byAuthor) {
     }
 }
 
-function renderSeriesList() {
+function navigateTab(showAuthorIndex) {
+    var activeTab = $(showAuthorIndex ? "#author-index-tab" : "#title-index-tab");
+    var inactiveTab = $(showAuthorIndex ? "#title-index-tab" : "#author-index-tab");
+    var activePane = $(showAuthorIndex ? "#author-index-container" : "#title-index-container");
+    var inactivePane = $(showAuthorIndex ? "#title-index-container" : "#author-index-container");
+
+    activeTab.addClass("active");
+    inactiveTab.removeClass("active");
+
+    activePane.show();
+    inactivePane.hide();
+}
+
+$(function () {
+    $("#author-index-container").hide();
+
+    $("#title-index-tab").click(function () {
+        navigateTab(false);
+    });
+
+    $("#author-index-tab").click(function () {
+        navigateTab(true);
+    });
+
     fetch("/api/series").then(function (response) {
         return response.json();
     }).then(function (seriesData) {
         renderIndex(seriesData, false);
         renderIndex(seriesData, true);
-    });
-}
-
-$(function () {
-    renderSeriesList();
-
-    var triggerTabList = [].slice.call(document.querySelectorAll('#index-tab button'))
-    triggerTabList.forEach(function (triggerEl) {
-        var tabTrigger = new bootstrap.Tab(triggerEl)
-
-        triggerEl.addEventListener('click', function (event) {
-            event.preventDefault()
-            tabTrigger.show()
-        })
     });
 });
