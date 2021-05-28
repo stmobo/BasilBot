@@ -63,7 +63,7 @@ async def register_snippet(ctx: CommandContext, args: Tuple[str], cmd: Command):
 
     while (
         isinstance(cur_msg, discord.Message)
-        and (cur_msg.author.id == ctx.user.id)
+        and (cur_msg.author.id == ctx.user.id or ctx.authorized)
         and cur_msg.id not in previous_snippet_ids
     ):
         snippet = Snippet.from_message(cur_msg)
