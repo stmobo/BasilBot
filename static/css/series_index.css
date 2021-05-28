@@ -7,6 +7,10 @@ body {
     padding: 0 .25rem;
 }
 
+a, .nav-link {
+    color: #4d7fca;
+}
+
 #page-title {
     text-align: center;
     margin: 0.5rem 0;
@@ -33,3 +37,4 @@ body {
     min-width: 3rem;
     text-align: center;
 }
+
