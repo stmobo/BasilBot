@@ -264,6 +264,17 @@ async def delete_series(ctx: CommandContext, args: Tuple[str], cmd: Command):
 
 @command("subscribe")
 async def subscribe_to_series(ctx: CommandContext, args: Tuple[str], cmd: Command):
+    """Subscribe to updates for a series.
+
+    **Usage:** `b!subscribe [series tag]`
+    ⚠️  Series tags must be surrounded by quotes if they contain spaces!
+
+    Subscribing to a series allows you to receive DM notifications whenever that
+    series updates with new snippets.
+
+    You can unsubscribe from a series using `b!unsubscribe [series tag]`.
+    """
+
     if len(args) != 1:
         return await ctx.reply(
             "**USAGE:** `" + config.get().summon_prefix + "subscribe [series tag]`",
@@ -291,6 +302,16 @@ async def subscribe_to_series(ctx: CommandContext, args: Tuple[str], cmd: Comman
 
 @command("unsubscribe")
 async def subscribe_to_series(ctx: CommandContext, args: Tuple[str], cmd: Command):
+    """Unsubscribe from updates for a series.
+
+    **Usage:** `b!unsubscribe [series tag]`
+    ⚠️  Series tags must be surrounded by quotes if they contain spaces!
+
+    This command unsubscribes you from update notifications for the given series;
+    you will no longer receive DMs from that series whenever it updates with
+    new snippets.
+    """
+
     if len(args) != 1:
         return await ctx.reply(
             "**USAGE:** `" + config.get().summon_prefix + "unsubscribe [series tag]`",
