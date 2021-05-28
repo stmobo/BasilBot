@@ -54,16 +54,18 @@ function SeriesEntry(series) {
 }
 
 
-function SeriesList(headerLetter, seriesList) {
-    this.headerLetter = headerLetter;
+function SeriesList(key, seriesList, authorHeader) {
+    this.key = key;
     this.seriesList = seriesList;
     this.root = $("<div>", { "class": "series-list-container" });
 
+    this.id = (authorHeader ? "author" : "title") + "-index-" + key;
     this.header = addSubelement(this.root, "h2", {
         "class": "series-list-header",
-        "id": "index-" + headerLetter,
-        "text": headerLetter
+        "id": this.id,
+        "text": this.key
     });
+
 
     this.list = addSubelement(this.root, "ul", { "class": "series-list" });
 
@@ -74,61 +76,106 @@ function SeriesList(headerLetter, seriesList) {
     for (var entry of this.entries) {
         this.list.append(entry.root);
     }
+
+    this.navItem = $("<li>", { "class": "nav-item index-nav-item" });
+    addSubelement(this.navItem, "a", { "class": "nav-link", "href": "#" + this.id, "text": this.key });
+}
+
+function compareByTitle(elemA, elemB) {
+    if (elemA.title < elemB.title) {
+        return -1;
+    } else if (elemA.title > elemB.title) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+function compareByAuthor(elemA, elemB) {
+    if (elemA.author.display_name < elemB.author.display_name) {
+        return -1;
+    } else if (elemA.author.display_name > elemB.author.display_name) {
+        return 1;
+    } else {
+        if (elemA.author.username < elemB.author.username) {
+            return -1;
+        } else if (elemA.author.username > elemB.author.username) {
+            return 1;
+        } else {
+            if (elemA.author.discriminator < elemB.author.discriminator) {
+                return -1;
+            } else if (elemA.author.discriminator > elemB.author.discriminator) {
+                return 1;
+            } else {
+                return 0;
+            }
+        }
+    }
+}
+
+function renderIndex(seriesData, byAuthor) {
+    /* Sort by title */
+    seriesData.sort(byAuthor ? compareByAuthor : compareByTitle);
+
+    /* Construct index */
+    var index = {};
+    for (let series of seriesData) {
+        let key = "";
+        if (byAuthor) {
+            key = series.author.display_name;
+        } else {
+            key = series.title[0].toUpperCase();
+        }
+
+        if (!index[key]) {
+            index[key] = [];
+        }
+
+        index[key].push(series);
+    }
+
+    var indexElems = [];
+    for (let key of Object.keys(index)) {
+        indexElems.push(new SeriesList(key, index[key], byAuthor));
+    }
+
+    indexElems.sort((elemA, elemB) => {
+        if (elemA.header < elemB.header) {
+            return -1;
+        } else if (elemA.header > elemB.header) {
+            return 1;
+        } else {
+            return 0;
+        }
+    });
+
+    var indexContainer = $(byAuthor ? "#author-index" : "#title-index");
+    var headerNav = $(byAuthor ? "#author-index-nav" : "#title-index-nav");
+    for (let elem of indexElems) {
+        indexContainer.append(elem.root);
+        headerNav.append(elem.navItem);
+    }
 }
 
 function renderSeriesList() {
     fetch("/api/series").then(function (response) {
         return response.json();
     }).then(function (seriesData) {
-        /* Sort by title */
-        seriesData.sort((elemA, elemB) => {
-            if (elemA.title < elemB.title) {
-                return -1;
-            } else if (elemA.title > elemB.title) {
-                return 1;
-            } else {
-                return 0;
-            }
-        });
-
-        /* Construct index based on first letter of titles */
-        var index = {};
-        for (let series of seriesData) {
-            let firstLetter = series.title[0].toUpperCase();
-            if (!index[firstLetter]) {
-                index[firstLetter] = [];
-            }
-
-            index[firstLetter].push(series);
-        }
-
-        var indexElems = [];
-        for (let letter of Object.keys(index)) {
-            indexElems.push(new SeriesList(letter, index[letter]));
-        }
-
-        indexElems.sort((elemA, elemB) => {
-            if (elemA.headerLetter < elemB.headerLetter) {
-                return -1;
-            } else if (elemA.headerLetter > elemB.headerLetter) {
-                return 1;
-            } else {
-                return 0;
-            }
-        });
-
-        var indexContainer = $("#title-index");
-        var headerNav = $("#title-index-nav");
-        for (let elem of indexElems) {
-            indexContainer.append(elem.root);
-
-            let navItem = $("<li>", { "class": "nav-item index-nav-item" });
-            addSubelement(navItem, "a", { "class": "nav-link", "href": "#index-" + elem.headerLetter, "text": elem.headerLetter });
-            headerNav.append(navItem);
-        }
+        renderIndex(seriesData, false);
+        renderIndex(seriesData, true);
     });
 }
 
 $(function () {
     renderSeriesList();
+
+    var triggerTabList = [].slice.call(document.querySelectorAll('#index-tab button'))
+    triggerTabList.forEach(function (triggerEl) {
+        var tabTrigger = new bootstrap.Tab(triggerEl)
+
+        triggerEl.addEventListener('click', function (event) {
+            event.preventDefault()
+            tabTrigger.show()
+        })
+    });
 });
