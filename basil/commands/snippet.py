@@ -1,4 +1,5 @@
 from __future__ import annotations
+import logging
 
 import discord
 from typing import Tuple, Union
@@ -90,19 +91,35 @@ async def register_snippet(ctx: CommandContext, args: Tuple[str], cmd: Command):
         except discord.NotFound:
             break
 
+    if len(new_snippets) == 0:
+        if new_series:
+            return await ctx.reply(
+                "❌  I couldn't find any snippets to collect for this series!"
+            )
+        else:
+            return await ctx.reply(
+                "❌  I couldn't find any new snippets to add to this series!"
+            )
+
     series.snippets.extend(reversed(new_snippets))
     await series.save(ctx)
 
     if new_series:
         await ctx.reply(
-            "✅  Created series `{}` with {} snippet{}.".format(
-                name, len(series.snippets), ("s" if len(series.snippets) > 1 else "")
+            '✅  Created series `{}` ("**{}**") with {} snippet{}.'.format(
+                name,
+                series.title,
+                len(series.snippets),
+                ("s" if len(series.snippets) > 1 else ""),
             )
         )
     else:
         await ctx.reply(
-            "✅  Appended {} new snippet{} to series `{}`.".format(
-                len(new_snippets), ("s" if len(new_snippets) > 1 else ""), name
+            '✅  Appended {} new snippet{} to series `{}` ("{}").'.format(
+                len(new_snippets),
+                ("s" if len(new_snippets) > 1 else ""),
+                name,
+                series.title,
             )
         )
 
@@ -118,6 +135,23 @@ async def register_snippet(ctx: CommandContext, args: Tuple[str], cmd: Command):
         await ctx.reply(
             "⚠️  **Warning:** Your snippet tag has spaces in it. You'll need to **surround the tag name with quotes** if you're using it in other commands!"
         )
+
+    for subscriber_id in series.subscribers:
+        user: discord.User = ctx.client.get_user(subscriber_id)
+
+        if user is None:
+            continue
+
+        try:
+            await user.send(
+                "ℹ️  Snippet series **{}** has updated!\n**Link to series:** {}".format(
+                    series.title, url
+                )
+            )
+        except Exception:
+            logging.error(
+                "Caught error when sending update notifications", exc_info=True
+            )
 
 
 @command("title")
@@ -226,6 +260,60 @@ async def delete_series(ctx: CommandContext, args: Tuple[str], cmd: Command):
 
     await series.delete(ctx)
     return await ctx.reply("✅  Deleted series `{}`.".format(tag))
+
+
+@command("subscribe")
+async def subscribe_to_series(ctx: CommandContext, args: Tuple[str], cmd: Command):
+    if len(args) != 1:
+        return await ctx.reply(
+            "**USAGE:** `" + config.get().summon_prefix + "subscribe [series tag]`",
+        )
+
+    tag = args[0]
+
+    try:
+        series = await Series.load(ctx, tag)
+    except SeriesNotFound:
+        return await ctx.reply(
+            "❌  There exists no series going by the tag `{}`.".format(tag)
+        )
+
+    if ctx.user.id not in series.subscribers:
+        series.subscribers.add(ctx.user.id)
+        await series.save(ctx, update_time=False)
+
+        return await ctx.reply(
+            "✅  Subscribed to series **{}** (`{}`).".format(series.title, tag)
+        )
+    else:
+        return await ctx.reply("ℹ️  You are already subscribed to that series.")
+
+
+@command("unsubscribe")
+async def subscribe_to_series(ctx: CommandContext, args: Tuple[str], cmd: Command):
+    if len(args) != 1:
+        return await ctx.reply(
+            "**USAGE:** `" + config.get().summon_prefix + "unsubscribe [series tag]`",
+        )
+
+    tag = args[0]
+
+    try:
+        series = await Series.load(ctx, tag)
+    except SeriesNotFound:
+        return await ctx.reply(
+            "❌  There exists no series going by the tag `{}`.".format(tag)
+        )
+
+    if ctx.user.id in series.subscribers:
+        series.subscribers.remove(ctx.user.id)
+        await series.save(ctx, update_time=False)
+
+        return await ctx.reply(
+            "✅  Unsubscribed series **{}** (`{}`).".format(series.title, tag)
+        )
+    else:
+        return await ctx.reply("ℹ️  You are not subscribed to that series.")
 
 
 @command("link")

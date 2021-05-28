@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import aioredis
-import discord
 import json
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Set
 import time
 
 from .commands import CommandContext
@@ -25,15 +24,22 @@ class Series:
         snippets: List[Snippet],
         title: Optional[str] = None,
         update_time: Optional[float] = None,
+        subscribers: Optional[Set[int]] = None,
     ):
+        name = name.strip()
+
         if title is None:
-            title = name
+            title = name.replace("_", " ")
+
+        if subscribers is None:
+            subscribers = set()
 
         self.name: str = name
         self.author_id: int = author_id
         self.snippets: List[Snippet] = snippets
         self.title: str = title
         self.update_time: Optional[float] = update_time
+        self.subscribers: Set[int] = subscribers
 
     @property
     def redis_prefix(self) -> str:
@@ -63,15 +69,17 @@ class Series:
             raise SeriesNotFound(name)
 
         title = await redis.get(redis_prefix + ":title", encoding="utf-8")
-
         author_id = await redis.get(redis_prefix + ":author", encoding="utf-8")
-
         update_time = await redis.get(redis_prefix + ":updated", encoding="utf-8")
+        subscribers = await redis.get(redis_prefix + ":subscribers", encoding="utf-8")
 
         try:
             update_time = float(update_time)
         except TypeError:
             pass
+
+        if subscribers is not None:
+            subscribers = set(json.loads(subscribers))
 
         snippet_ids = json.loads(snippet_ids)
         snippets = []
@@ -79,9 +87,11 @@ class Series:
             snippet = await Snippet.load(redis, msg_id)
             snippets.append(snippet)
 
-        return cls(int(author_id), name, snippets, title, update_time)
+        return cls(int(author_id), name, snippets, title, update_time, subscribers)
 
-    async def save(self, redis_or_ctx: Union[aioredis.Redis, CommandContext]):
+    async def save(
+        self, redis_or_ctx: Union[aioredis.Redis, CommandContext], update_time=True
+    ):
         redis: aioredis.Redis = redis_or_ctx
 
         try:
@@ -89,7 +99,9 @@ class Series:
         except AttributeError:
             pass
 
-        self.update_time = time.time()
+        if update_time:
+            self.update_time = time.time()
+
         snippet_ids = [s.message_id for s in self.snippets]
         tr = redis.multi_exec()
 
@@ -104,9 +116,11 @@ class Series:
         )
 
         tr.sadd(SERIES_INDEX_KEY, self.name)
-
         tr.set(self.redis_prefix + ":author", str(self.author_id))
-        tr.set(self.redis_prefix + ":updated", str(self.update_time))
+        tr.set(self.redis_prefix + ":subscribers", json.dumps(list(self.subscribers)))
+
+        if update_time:
+            tr.set(self.redis_prefix + ":updated", str(self.update_time))
 
         await tr.execute()
 
@@ -123,6 +137,7 @@ class Series:
         tr.delete(self.redis_prefix + ":title")
         tr.delete(self.redis_prefix + ":author")
         tr.delete(self.redis_prefix + ":updated")
+        tr.delete(self.redis_prefix + ":subscribers")
         tr.srem(SERIES_INDEX_KEY, self.name)
         await tr.execute()
 
@@ -158,6 +173,11 @@ class Series:
         tr.rename(
             self.redis_prefix + ":updated",
             new_prefix + ":updated",
+        )
+
+        tr.rename(
+            self.redis_prefix + ":subscribers",
+            new_prefix + ":subscribers",
         )
 
         tr.srem(SERIES_INDEX_KEY, self.name)
