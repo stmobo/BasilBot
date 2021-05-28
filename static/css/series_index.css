@@ -12,8 +12,9 @@ body {
     margin: 1rem 0;
 }
 
-#title-index-nav {
+#index-tab-content .nav {
     justify-content: center;
+    margin: 1rem 0;
 }
 
 .index-nav-item {
