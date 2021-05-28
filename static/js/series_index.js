@@ -122,7 +122,7 @@ function renderIndex(seriesData, byAuthor) {
     for (let series of seriesData) {
         let key = "";
         if (byAuthor) {
-            key = series.author.display_name;
+            key = series.author.display_name + " (" + series.author.username + "#" + series.author.discriminator + ")";
         } else {
             key = series.title[0].toUpperCase();
         }
