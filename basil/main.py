@@ -24,7 +24,7 @@ INTENTS.voice_states = False
 
 
 class BasilClient(discord.Client):
-    perms_integer = 379968
+    perms_integer = 85056
     ready = False
 
     _inst: Optional[BasilClient] = None
@@ -45,7 +45,7 @@ class BasilClient(discord.Client):
 
     async def on_ready(self):
         logging.info(
-            "Logged in as {name} ({id})\n------\nInvite URL:\nhttps://discordapp.com/api/oauth2/authorize?client_id={id}&scope=bot%20applications.commands&permissions={perms}".format(
+            "Logged in as {name} ({id})\n------\nInvite URL:\nhttps://discordapp.com/api/oauth2/authorize?client_id={id}&scope=bot&permissions={perms}".format(
                 name=self.user.name, id=self.user.id, perms=self.perms_integer
             )
         )
