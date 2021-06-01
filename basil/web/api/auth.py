@@ -11,7 +11,6 @@ import urllib.parse
 import aiohttp
 from aioredis import Redis
 import discord
-from discord import guild
 from itsdangerous import Signer, BadSignature
 from sanic import Sanic, Blueprint, response, exceptions
 from sanic.request import Request
@@ -49,7 +48,7 @@ class DiscordUserInfo(object):
         user_id: int,
         ctx: OAuth2Context,
     ):
-        self.id: int = user_id
+        self.id: int = int(user_id)
         self.ctx: OAuth2Context = ctx
 
     def get_member_names(self) -> Tuple[List[str], str, str]:
@@ -59,7 +58,7 @@ class DiscordUserInfo(object):
         primary_guild: discord.Guild = app.ctx.client.get_guild(
             config.get().primary_server_id
         )
-        member: discord.Member = guild.get_member(self.id)
+        member: discord.Member = primary_guild.get_member(self.id)
 
         if member is None:
             return False
@@ -83,7 +82,9 @@ class DiscordUserInfo(object):
 
         async with redis.pipeline(transaction=True) as tr:
             tr.set("sessions:users:" + self.ctx.session_id, self.id)
-            tr.expireat("sessions:users:" + self.ctx.session_id, self.ctx.expire_time)
+            tr.expireat(
+                "sessions:users:" + self.ctx.session_id, int(self.ctx.expire_time)
+            )
             await tr.execute()
 
     @classmethod
@@ -185,13 +186,11 @@ async def save_session_id(request: Request, response: HTTPResponse):
         response.cookies["session"]["max-age"] = 86400 * 7
 
 
-
 @auth_api.get("/me")
 async def get_login_data(request: Request):
     discord_user = await DiscordUserInfo.load(request)
 
     data = {
-        "logged_in": discord_user is not None,
         "session_id": request.ctx.session,
         "dev_mode": config.get().dev_mode,
     }

@@ -7,6 +7,22 @@ body {
     padding: 0 .25rem;
 }
 
+.navbar {
+    border-width: 0 2px 2px;
+    border-color: #4f545c;
+    border-style: solid;
+    border-radius: 0 0 13px 13px;
+    background-color: rgba(4, 4, 5, 0.1);
+}
+
+#cur-user-name {
+    font-weight: bold;
+}
+
+#logout-btn {
+    display: none;
+}
+
 a, .nav-link {
     color: #4d7fca;
 }

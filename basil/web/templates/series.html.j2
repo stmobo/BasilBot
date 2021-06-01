@@ -6,10 +6,42 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ series_title }} by {{ display_name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
     <link rel="stylesheet" href="/css/snippet.css">
 </head>
 
 <body>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid">
+            <span class="navbar-brand" href="#">
+                Basil Snippet Library
+            </span>
+
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-content"
+                aria-controls="navbar-content" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbar-content">
+                <ul class="navbar-nav">
+                    <li class="nav-item active">
+                        <a class="nav-link" href="series_index.html">Series Index</a>
+                    </li>
+                </ul>
+                <div class="d-flex ms-auto">
+                    <span class="cur-user-label navbar-text me-4">
+                        Logged in as <span id="cur-user-name"></span>
+                    </span>
+                    <a class="btn btn-primary" href="/api/auth/login" role="button" id="login-btn">
+                        Log in with Discord
+                    </a>
+                    <a class="btn btn-danger" href="/api/auth/logout" role="button" id="logout-btn">Log Out</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
     <div class="series-header">
         <h1 class="series-title">{{ series_title }}</h1>
         <div class="series-authors">
@@ -31,7 +63,13 @@
 
     {% endfor %}
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4"
+        crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.slim.min.js"
+        integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI=" crossorigin="anonymous"></script>
     <script src="/js/discord-markdown.min.js"></script>
+    <script src="/js/common.js"></script>
     <script>
         {% for snippet in snippets %}
 

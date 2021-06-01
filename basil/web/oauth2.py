@@ -250,7 +250,7 @@ class OAuth2Context(object):
                     },
                 )
                 tr.hdel(self.auth_data_key, "nonce", "landing")
-                tr.expireat(self.auth_data_key, self.expire_time)
+                tr.expireat(self.auth_data_key, int(self.expire_time))
                 await tr.execute()
         except RedisError:
             raise ServerError("Could not save authorization data to Redis")

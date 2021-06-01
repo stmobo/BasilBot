@@ -12,6 +12,36 @@
 </head>
 
 <body>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid">
+            <span class="navbar-brand" href="#">
+                Basil Snippet Library
+            </span>
+
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-content"
+                aria-controls="navbar-content" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbar-content">
+                <ul class="navbar-nav">
+                    <li class="nav-item active">
+                        <a class="nav-link" href="series_index.html">Series Index</a>
+                    </li>
+                </ul>
+                <div class="d-flex ms-auto">
+                    <span class="navbar-text me-4" id="cur-user-label">
+                        Logged in as <span id="cur-user-name"></span>
+                    </span>
+                    <a class="btn btn-primary" href="/api/auth/login" role="button" id="login-btn">
+                        Log in with Discord
+                    </a>
+                    <a class="btn btn-danger" href="/api/auth/logout" role="button" id="logout-btn">Log Out</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
     <h1 id="page-title">Series Index</h1>
 
     <ul class="nav nav-tabs" id="index-tab" role="tablist">
@@ -39,6 +69,7 @@
         crossorigin="anonymous"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.slim.min.js"
         integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI=" crossorigin="anonymous"></script>
+    <script src="/js/common.js"></script>
     <script src="/js/series_index.js"></script>
 </body>
 
