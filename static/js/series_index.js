@@ -336,9 +336,9 @@ function renderIndex(seriesData, byAuthor) {
     }
 
     indexElems.sort((elemA, elemB) => {
-        if (elemA.header < elemB.header) {
+        if (elemA.key < elemB.key) {
             return -1;
-        } else if (elemA.header > elemB.header) {
+        } else if (elemA.key > elemB.key) {
             return 1;
         } else {
             return 0;
