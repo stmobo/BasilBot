@@ -246,6 +246,7 @@ SeriesEntry.prototype.toggleDeleteConfirm = function (show) {
 
 function SeriesList(key, seriesList, authorHeader) {
     this.key = key;
+    this.sortKey = key.toLowerCase();
     this.seriesList = seriesList;
     this.root = $("<div>", { "class": "series-list-container" });
 
@@ -336,9 +337,9 @@ function renderIndex(seriesData, byAuthor) {
     }
 
     indexElems.sort((elemA, elemB) => {
-        if (elemA.key < elemB.key) {
+        if (elemA.sortKey < elemB.sortKey) {
             return -1;
-        } else if (elemA.key > elemB.key) {
+        } else if (elemA.sortKey > elemB.sortKey) {
             return 1;
         } else {
             return 0;
