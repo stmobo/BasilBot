@@ -55,12 +55,12 @@ function SeriesEntry(series) {
 
     addSubelement(this.infoBar, "span", {
         "class": "series-part-count",
-        "text": series.n_snippets.toString() + " parts"
+        "text": series.n_snippets.toString() + " part" + (series.n_snippets != 1 ? "s" : "")
     });
 
     addSubelement(this.infoBar, "span", {
         "class": "series-word-count",
-        "text": series.wordcount.toString() + " words"
+        "text": series.wordcount.toString() + " word" + (series.wordcount != 1 ? "s" : "")
     });
 
     if (series.updated) {
