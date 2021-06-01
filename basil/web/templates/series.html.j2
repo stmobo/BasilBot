@@ -11,15 +11,12 @@
 
 <body>
     <div class="series-header">
-        <h1 class="snippet-title">{{ series_title }}</h1>
-        {% for author in authors %}
-
-        <div class="snippet-author">
-            <span class="snippet-display-name">{{ author.display_name }}</span>
-            <span class="snippet-user-name"> {{ author.username }}#{{ author.discriminator }}</span>
+        <h1 class="series-title">{{ series_title }}</h1>
+        <div class="series-authors">
+            {% for author in authors %}
+            <span class="series-author"><span class="series-display-name">{{ author.display_name | trim }}</span><span class="series-user-name">{{ author.username | trim }}#{{ author.discriminator }}</span></span>
+            {% endfor %}
         </div>
-        
-        {% endfor %}
     </div>
 
     <hr class="snippet-separator">

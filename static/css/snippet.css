@@ -14,30 +14,46 @@ body {
     align-items: center;
 }
 
-.snippet-title {
+.series-title {
     margin-top: 0;
     margin-bottom: 0.5rem;
     font-size: 3.5rem;
 }
 
-.snippet-display-name {
+.series-author {
     display: inline;
-    font-size: 2.25rem;
-    margin: 0;
+    font-size: 1.8rem;
 }
 
-.snippet-user-name {
-    display: inline;
-    font-size: 1.15rem;
-    margin: 0;
+.series-author + .series-author::before {
+    content: ", ";
 }
 
-.snippet-user-name::before {
+.series-display-name {
+    margin: 0;
+    text-decoration: underline dotted;
+    cursor: help;
+}
+
+.series-user-name {
+    display: none;
+    margin-left: 0.5rem;
+    font-size: 1.1rem;
+    line-height: 2.25rem;
+    vertical-align: text-bottom;
+    color: hsla(210, 3%, 87%, 0.65);
+}
+
+.series-user-name::before {
     content: "(";
 }
 
-.snippet-user-name::after {
+.series-user-name::after {
     content: ")";
+}
+
+.series-author:hover .series-user-name {
+    display: inline;
 }
 
 .snippet-container {
