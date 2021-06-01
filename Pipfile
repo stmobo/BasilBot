@@ -10,6 +10,7 @@ sanic = "~=21.3"
 aiohttp = "~=3.7"
 jinja2 = "~=3.0"
 schema = "~=0.7"
+itsdangerous = "~=2.0"
 
 [dev-packages]
 black = "*"

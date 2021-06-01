@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import aiohttp
 import aioredis
 from sanic import Sanic
 
@@ -10,7 +11,10 @@ app = Sanic("basil")
 
 @app.before_server_start
 async def setup_redis(app, loop):
-    app.ctx.redis = aioredis.from_url(config.get().primary_redis_url, encoding="utf-8", decode_responses=True)
+    app.ctx.http_session = aiohttp.ClientSession()
+    app.ctx.redis = aioredis.from_url(
+        config.get().primary_redis_url, encoding="utf-8", decode_responses=True
+    )
 
 
 from .api import api

@@ -20,6 +20,12 @@ class Config(object):
             "discord_log": Path("/var/log/basil/discord.log"),
             "primary_server_id": 783787827061063710,
             "api_base_url": "http://127.0.0.1/",
+            "oauth2_redirect_uri": "http://127.0.0.1/api/auth/authorized",
+            "client_id": "",
+            "client_secret": "",
+            "cookie_signer_key": "",
+            "login_redirect_target": "/series_index.html",
+            "dev_mode": False,
         }
 
         self.load()

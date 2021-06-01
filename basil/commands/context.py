@@ -37,7 +37,7 @@ class CommandContext(object):
         management_role_name: str = config.get().management_role_name.strip().casefold()
         if len(management_role_name) > 0:
             return any(
-                r.name.strip().casefold == management_role_name for r in self.user.roles
+                r.name.strip().casefold() == management_role_name for r in self.user.roles
             )
         else:
             return False

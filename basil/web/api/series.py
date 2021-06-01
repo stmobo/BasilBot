@@ -41,3 +41,53 @@ async def get_all_series(_req: Request):
         )
 
     return response.json(ret)
+
+
+class SeriesView(HTTPMethodView):
+    PUT_SCHEMA = Schema(
+        And(
+            {
+                Optional("title"): And(str, len),
+                Optional("snippets"): And([int], len),
+                Optional("authors"): And([int], len),
+            },
+            len,
+        )
+    )
+
+    async def get(self, req: Request, tag: str):
+        client: discord.Client = app.ctx.client
+        redis: aioredis.Redis = app.ctx.redis
+
+        try:
+            series = await Series.load(redis, tag)
+        except SeriesNotFound:
+            raise exceptions.NotFound("Could not find series " + tag)
+
+        snippets = []
+        for snippet in series.snippets:
+            snippets.append(
+                {
+                    "content": snippet.content,
+                    "message_id": snippet.message_id,
+                    "author_id": snippet.author_id,
+                }
+            )
+
+        authors = [helper.author_id_to_object(client, id) for id in series.author_ids]
+        ret = {
+            "tag": tag,
+            "title": series.title.strip(),
+            "snippets": snippets,
+            "authors": authors,
+            "url": app.url_for("view.series", name=urllib.parse.quote(tag)),
+            "updated": series.update_time,
+        }
+
+        return response.json(ret)
+
+    async def put(self, req: Request, tag: str):
+        pass
+
+
+series_api.add_route(SeriesView.as_view(), "/<tag>")
