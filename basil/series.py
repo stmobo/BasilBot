@@ -113,10 +113,10 @@ class Series:
             if update_time:
                 tr.set(self.redis_prefix + ":updated", str(self.update_time))
 
-        await tr.execute()
+            await tr.execute()
 
     async def delete(self):
-        with self.redis.pipeline(transaction=True) as tr:
+        async with self.redis.pipeline(transaction=True) as tr:
             tr.delete(self.redis_prefix + ":snippets")
             tr.delete(self.redis_prefix + ":title")
             tr.delete(self.redis_prefix + ":authors")
