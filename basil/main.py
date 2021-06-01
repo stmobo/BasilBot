@@ -93,9 +93,7 @@ class BasilClient(discord.Client):
 
 @web.app.before_server_start
 async def start_bot(app, loop):
-    client = BasilClient(
-        activity=discord.Game("Starting..."), intents=INTENTS
-    )
+    client = BasilClient(activity=discord.Game("Starting..."), intents=INTENTS)
 
     # Initialize logging handlers:
     handler = logging.FileHandler(
