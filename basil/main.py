@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import aioredis
 import discord
 import logging
@@ -8,7 +7,7 @@ from typing import Optional
 
 from . import config
 from . import commands
-from . import api
+from . import web
 from .snippet import Snippet, SnippetNotFound
 
 logging.basicConfig(level=logging.INFO)
@@ -53,13 +52,9 @@ class BasilClient(discord.Client):
         self.redis = await aioredis.create_redis(config.get().primary_redis_url)
 
         if config.get().maintenance_mode:
-            await self.change_presence(
-                activity=discord.CustomActivity("Maintenance Mode")
-            )
+            await self.change_presence(activity=discord.Game("Maintenance Mode"))
         else:
-            await self.change_presence(
-                activity=discord.CustomActivity("Organizing Snippets")
-            )
+            await self.change_presence(activity=discord.Game("Organizing Snippets"))
 
         self.ready = True
 
@@ -91,10 +86,10 @@ class BasilClient(discord.Client):
         await snippet.save(self.redis)
 
 
-@api.api_app.before_server_start
+@web.app.before_server_start
 async def start_bot(app, loop):
     client = BasilClient(
-        activity=discord.CustomActivity("Starting..."), intents=INTENTS
+        activity=discord.Game("Starting..."), intents=INTENTS
     )
 
     # Initialize logging handlers:
@@ -117,4 +112,4 @@ async def start_bot(app, loop):
 
 
 def app_main():
-    return api.api_app.run(host="0.0.0.0", port=8080)
+    return web.app.run(host="0.0.0.0", port=8080)
