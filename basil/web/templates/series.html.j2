@@ -12,8 +12,14 @@
 <body>
     <div class="series-header">
         <h1 class="snippet-title">{{ series_title }}</h1>
-        <h2 class="snippet-display-name">{{ display_name }}</h2>
-        <h3 class="snippet-user-name">{{ username }}#{{ discriminator }}</h3>
+        {% for author in authors %}
+
+        <div class="snippet-author">
+            <span class="snippet-display-name">{{ author.display_name }}</span>
+            <span class="snippet-user-name"> {{ author.username }}#{{ author.discriminator }}</span>
+        </div>
+        
+        {% endfor %}
     </div>
 
     <hr class="snippet-separator">
@@ -29,10 +35,14 @@
     {% endfor %}
 
     <script src="/js/discord-markdown.min.js"></script>
-    <script src="/js/snippet.js"></script>
     <script>
         {% for snippet in snippets %}
-        loadSnippet("{{ snippet.message_id }}");
+
+        document.addEventListener("DOMContentLoaded", function (ev) {
+            var container = document.getElementById("snippet-{{ snippet.message_id }}");
+            container.innerHTML = discordMarkdown.toHTML({{ snippet.escaped_content }});
+        });
+
         {% endfor %}
     </script>
 </body>

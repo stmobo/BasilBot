@@ -5,21 +5,62 @@ function addSubelement(elem, type, opts) {
     return new_elem;
 }
 
-function SeriesEntry(series) {
-    var root = $("<li>", { "class": "series-entry" });
-    this.root = root;
-    this.series = series;
+function AuthorDisplay(author) {
+    this.root = $("<span>", { "class": "author-container" });
 
-    this.link = addSubelement(root, "a", { "class": "series-link", "href": series.url, "text": series.title });
-
-    this.display_name = addSubelement(root, "span", {
-        "class": "series-display-name",
-        "text": " by " + series.author.display_name
+    this.display_name = addSubelement(this.root, "span", {
+        "class": "author-display-name",
+        "text": author.display_name
     });
 
-    this.username = addSubelement(root, "span", {
-        "class": "series-username",
-        "text": " (" + series.author.username + "#" + series.author.discriminator + ")"
+    this.usernameContainer = addSubelement(this.root, "span", {
+        "class": "author-username-container"
+    });
+
+    this.username = addSubelement(this.usernameContainer, "span", {
+        "class": "author-username",
+        "text": author.username
+    });
+
+    this.discriminator = addSubelement(this.usernameContainer, "span", {
+        "class": "author-discriminator",
+        "text": author.discriminator
+    });
+}
+
+function SeriesEntry(series) {
+    this.root = $("<li>", { "class": "series-entry" });
+    this.series = series;
+
+    this.titleBar = addSubelement(this.root, "div", { "class": "series-titlebar" });
+    this.infoBar = addSubelement(this.root, "div", { "class": "series-infobar" });
+
+    this.link = addSubelement(this.titleBar, "a", { "class": "series-link", "href": series.url, "text": series.title });
+
+    this.authorContainer = addSubelement(this.titleBar, "span", { "class": "series-authors" });
+    this.authorDisplays = series.authors.map((author) => new AuthorDisplay(author));
+
+    this.authorContainer.append("by ");
+
+    for (let i = 0; i < this.authorDisplays.length; i++) {
+        if (this.authorDisplays.length > 1 && i > 0) {
+            this.authorContainer.append(
+                (this.authorDisplays.length > 2 ? ", " : " ")
+                + (i === this.authorDisplays.length - 1 ? "and " : "")
+            );
+        }
+
+        this.authorContainer.append(this.authorDisplays[i].root);
+    }
+
+    addSubelement(this.infoBar, "span", {
+        "class": "series-part-count",
+        "text": series.n_snippets.toString() + " parts"
+    });
+
+    addSubelement(this.infoBar, "span", {
+        "class": "series-word-count",
+        "text": series.wordcount.toString() + " words"
     });
 
     if (series.updated) {
@@ -45,8 +86,8 @@ function SeriesEntry(series) {
             format_str = n_days + (n_days === 1 ? ' day ago' : ' days ago');
         }
 
-        this.lastUpdated = addSubelement(this.root, "span", {
-            "class": "series-update-time text-muted", "text": " — Last updated " + format_str
+        this.lastUpdated = addSubelement(this.infoBar, "span", {
+            "class": "series-update-time", "text": "Last updated " + format_str
         });
     } else {
         this.lastUpdated = null;
@@ -68,10 +109,7 @@ function SeriesList(key, seriesList, authorHeader) {
 
 
     this.list = addSubelement(this.root, "ul", { "class": "series-list" });
-
-    this.entries = seriesList.map(function (series) {
-        return new SeriesEntry(series);
-    });
+    this.entries = seriesList.map((series) => new SeriesEntry(series));
 
     for (var entry of this.entries) {
         this.list.append(entry.root);
@@ -91,47 +129,56 @@ function compareByTitle(elemA, elemB) {
     }
 }
 
-function compareByAuthor(elemA, elemB) {
-    if (elemA.author.display_name < elemB.author.display_name) {
-        return -1;
-    } else if (elemA.author.display_name > elemB.author.display_name) {
-        return 1;
-    } else {
-        if (elemA.author.username < elemB.author.username) {
+function compareArrays(a, b, compareFunc) {
+    var maxIndex = a.length > b.length ? a.length : b.length;
+
+    for (let i = 0; i < maxIndex; i++) {
+        if (i >= a.length) {
             return -1;
-        } else if (elemA.author.username > elemB.author.username) {
+        } else if (i >= b.length) {
             return 1;
         } else {
-            if (elemA.author.discriminator < elemB.author.discriminator) {
-                return -1;
-            } else if (elemA.author.discriminator > elemB.author.discriminator) {
-                return 1;
-            } else {
-                return 0;
+            let r = compareFunc(a[i], b[i]);
+            if (r != 0) {
+                return r;
             }
         }
     }
+
+    return 0;
+}
+
+function compareByAuthors(elemA, elemB) {
+    return compareArrays(elemA.authors, elemB.authors, (authorA, authorB) => compareArrays(
+        [authorA.display_name, authorA.username, authorA.discriminator],
+        [authorB.display_name, authorB.username, authorB.discriminator],
+        (a, b) => (a > b ? 1 : (a < b ? -1 : 0))
+    ));
 }
 
 function renderIndex(seriesData, byAuthor) {
     /* Sort by title */
-    seriesData.sort(byAuthor ? compareByAuthor : compareByTitle);
+    seriesData.sort(byAuthor ? compareByAuthors : compareByTitle);
 
     /* Construct index */
     var index = {};
     for (let series of seriesData) {
-        let key = "";
+        let keys = [];
         if (byAuthor) {
-            key = series.author.display_name + " (" + series.author.username + "#" + series.author.discriminator + ")";
+            for (let author of series.authors) {
+                keys.push(author.display_name + " (" + author.username + "#" + author.discriminator + ")");
+            }
         } else {
-            key = series.title[0].toUpperCase();
+            keys.push(series.title[0].toUpperCase());
         }
 
-        if (!index[key]) {
-            index[key] = [];
-        }
+        for (let key of keys) {
+            if (!index[key]) {
+                index[key] = [];
+            }
 
-        index[key].push(series);
+            index[key].push(series);
+        }
     }
 
     var indexElems = [];

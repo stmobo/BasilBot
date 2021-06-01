@@ -3,6 +3,7 @@ from __future__ import annotations
 import discord
 from typing import Tuple, List
 
+
 def get_member_names(
     client: discord.Client, user_id: int
 ) -> Tuple[List[str], str, str]:
@@ -22,3 +23,13 @@ def get_member_names(
 
     return sorted(display_names), username, discriminator
 
+
+def author_id_to_object(client: discord.Client, author_id: int):
+    display_names, username, discriminator = get_member_names(client, author_id)
+
+    return {
+        "id": author_id,
+        "display_name": " / ".join(display_names),
+        "username": username,
+        "discriminator": discriminator,
+    }

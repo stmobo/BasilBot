@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import aioredis
 import discord
-from sanic import Sanic, Blueprint, Request, response
+from sanic import Sanic, Blueprint, Request, response, exceptions
+from sanic.views import HTTPMethodView
+from schema import Schema, And, Optional, SchemaError
 import urllib.parse
 
 from ...series import Series, SeriesNotFound, SERIES_INDEX_KEY
@@ -16,29 +18,23 @@ app = Sanic.get_app("basil")
 async def get_all_series(_req: Request):
     client: discord.Client = app.ctx.client
     redis: aioredis.Redis = app.ctx.redis
-
     ret = []
-    async for tag_bytes in redis.isscan(SERIES_INDEX_KEY):
-        tag: str = tag_bytes.decode("utf-8")
+
+    tag: str
+    async for tag in redis.sscan_iter(SERIES_INDEX_KEY):
         try:
             series = await Series.load(redis, tag)
         except SeriesNotFound:
             continue
 
-        display_names, username, discriminator = helper.get_member_names(
-            client, series.author_id
-        )
+        authors = [helper.author_id_to_object(client, id) for id in series.author_ids]
         ret.append(
             {
                 "tag": tag,
                 "title": series.title.strip(),
                 "n_snippets": len(series.snippets),
-                "author": {
-                    "id": series.author_id,
-                    "display_name": " / ".join(display_names),
-                    "username": username,
-                    "discriminator": discriminator,
-                },
+                "wordcount": series.wordcount(),
+                "authors": authors,
                 "url": app.url_for("view.series", name=urllib.parse.quote(tag)),
                 "updated": series.update_time,
             }

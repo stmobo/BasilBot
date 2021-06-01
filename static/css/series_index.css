@@ -26,9 +26,15 @@ a, .nav-link {
 }
 
 .index-nav-item {
-    border: 2px solid;
-    border-radius: 13px;
     margin: 0.25rem 0.3rem;
+    border: 2px solid #4f545c;
+    border-radius: 13px;
+    background-color: rgba(4, 4, 5, 0.2);
+}
+
+.index-nav-item:hover {
+    border-color: rgb(138, 138, 138);
+    background-color: rgba(4, 4, 5, 0.37);
 }
 
 .index-nav-item .nav-link {
@@ -38,3 +44,83 @@ a, .nav-link {
     text-align: center;
 }
 
+.index-nav-item:hover .nav-link {
+    color: rgb(109, 145, 199);
+}
+
+.series-list-header {
+    margin-bottom: 0;
+}
+
+.series-list {
+    list-style: none;
+    padding-left: 0;
+}
+
+.series-entry {
+    margin: 0.5rem 0;
+    padding: 0.5rem 0.75rem;
+    border: 2px solid #4f545c;
+    border-radius: 13px;
+    background-color: rgba(4, 4, 5, 0.1);
+}
+
+.series-link {
+    font-size: 1.5rem;
+}
+
+.series-authors {
+    font-size: 1.125rem;
+    padding-left: 0.5rem;
+    vertical-align: baseline;
+}
+
+.author-container {
+    display: inline-block;
+}
+
+.author-display-name {
+    text-decoration: underline dotted;
+    cursor: help;
+}
+
+.author-username-container {
+    display: none;
+    color: hsla(210, 3%, 87%, 0.65);
+    line-height: 1.5;
+}
+
+.author-container:hover .author-username-container {
+    display: inline
+}
+
+.author-username, .author-discriminator {
+    font-size: 0.9rem;
+    vertical-align: text-top;
+}
+
+.author-username::before {
+    content: " (";
+}
+
+.author-discriminator::before {
+    content: "#";
+}
+
+.author-discriminator::after {
+    content: ")";
+}
+
+.series-part-count {
+    padding-right: 0.75rem;
+    border-right: 1px solid;
+}
+
+.series-word-count {
+    padding: 0 0.75rem;
+    border-right: 1px solid;
+}
+
+.series-update-time {
+    padding-left: 0.75rem;
+}

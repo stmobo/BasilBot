@@ -52,10 +52,10 @@ async def register_snippet(ctx: CommandContext, args: Tuple[str], cmd: Command):
     try:
         series = await Series.load(ctx, name)
     except SeriesNotFound:
-        series = Series(ctx.user.id, name, [])
+        series = Series(ctx.redis, name, set([ctx.user.id]), [])
         new_series = True
 
-    if series.author_id != ctx.user.id and not ctx.authorized:
+    if ctx.user.id not in series.author_ids and not ctx.authorized:
         return await ctx.reply("❌  That series does not belong to you.")
 
     previous_snippet_ids = set(s.message_id for s in series.snippets)
@@ -64,11 +64,11 @@ async def register_snippet(ctx: CommandContext, args: Tuple[str], cmd: Command):
 
     while (
         isinstance(cur_msg, discord.Message)
-        and (cur_msg.author.id == ctx.user.id or ctx.authorized)
+        and ((cur_msg.author.id in series.author_ids) or ctx.authorized)
         and cur_msg.id not in previous_snippet_ids
     ):
-        snippet = Snippet.from_message(cur_msg)
-        await snippet.save(ctx)
+        snippet = Snippet.from_message(ctx, cur_msg)
+        await snippet.save()
 
         new_snippets.append(snippet)
 
@@ -102,7 +102,7 @@ async def register_snippet(ctx: CommandContext, args: Tuple[str], cmd: Command):
             )
 
     series.snippets.extend(reversed(new_snippets))
-    await series.save(ctx)
+    await series.save()
 
     if new_series:
         await ctx.reply(
@@ -179,11 +179,11 @@ async def set_title(ctx: CommandContext, args: Tuple[str], cmd: Command):
             "❌  There exists no series going by the tag `{}`.".format(tag)
         )
 
-    if series.author_id != ctx.user.id and not ctx.authorized:
+    if ctx.user.id not in series.author_ids and not ctx.authorized:
         return await ctx.reply("❌  That series does not belong to you.")
 
     series.title = title
-    await series.save(ctx)
+    await series.save()
 
     return await ctx.reply(
         '✅  Set title of series `{}` to **"{}"**.'.format(tag, title)
@@ -215,7 +215,7 @@ async def rename_series(ctx: CommandContext, args: Tuple[str], cmd: Command):
             "❌  There exists no series going by the tag `{}`.".format(old_tag)
         )
 
-    if series.author_id != ctx.user.id and not ctx.authorized:
+    if ctx.user.id not in series.author_ids and not ctx.authorized:
         return await ctx.reply("❌  That series does not belong to you.")
 
     try:
@@ -226,7 +226,7 @@ async def rename_series(ctx: CommandContext, args: Tuple[str], cmd: Command):
     except SeriesNotFound:
         pass
 
-    await series.rename(ctx, new_tag)
+    await series.rename(new_tag)
     return await ctx.reply(
         "✅  Renamed series tag `{}` to `{}`.".format(old_tag, new_tag)
     )
@@ -255,10 +255,10 @@ async def delete_series(ctx: CommandContext, args: Tuple[str], cmd: Command):
             "❌  There exists no series going by the tag `{}`.".format(tag)
         )
 
-    if series.author_id != ctx.user.id and not ctx.authorized:
+    if ctx.user.id not in series.author_ids and not ctx.authorized:
         return await ctx.reply("❌  That series does not belong to you.")
 
-    await series.delete(ctx)
+    await series.delete()
     return await ctx.reply("✅  Deleted series `{}`.".format(tag))
 
 
@@ -291,7 +291,7 @@ async def subscribe_to_series(ctx: CommandContext, args: Tuple[str], cmd: Comman
 
     if ctx.user.id not in series.subscribers:
         series.subscribers.add(ctx.user.id)
-        await series.save(ctx, update_time=False)
+        await series.save(update_time=False)
 
         return await ctx.reply(
             "✅  Subscribed to series **{}** (`{}`).".format(series.title, tag)
@@ -328,7 +328,7 @@ async def subscribe_to_series(ctx: CommandContext, args: Tuple[str], cmd: Comman
 
     if ctx.user.id in series.subscribers:
         series.subscribers.remove(ctx.user.id)
-        await series.save(ctx, update_time=False)
+        await series.save(update_time=False)
 
         return await ctx.reply(
             "✅  Unsubscribed from series **{}** (`{}`).".format(series.title, tag)
@@ -373,25 +373,3 @@ async def get_index(ctx: CommandContext, args: Tuple[str], cmd: Command):
 
     url = urllib.parse.urljoin(config.get().api_base_url, "/series_index.html")
     return await ctx.reply("ℹ️  **Link to series index:** " + url, ephemeral=False)
-
-
-@command("reindex", authorized_only=True, hidden="unauthorized")
-async def reindex(ctx: CommandContext, args: Tuple[str], cmd: Command):
-    """Reindex all snippets.
-
-    **Usage:** `b!reindex`
-    """
-
-    n_tags = 0
-
-    tr = ctx.redis.multi_exec()
-    tr.delete(SERIES_INDEX_KEY)
-    async for key_bytes in ctx.redis.iscan(match="series:*:snippets"):
-        key: str = key_bytes.decode("utf-8")
-        tag = key.split(":", 2)[1]
-        tr.sadd(SERIES_INDEX_KEY, tag)
-        n_tags += 1
-
-    await tr.execute()
-
-    return await ctx.reply("✅  Reindexed " + str(n_tags) + " series tags.")

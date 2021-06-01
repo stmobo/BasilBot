@@ -25,16 +25,12 @@ async def series(_req: Request, name: str):
         raise exceptions.NotFound("Could not find series " + name)
 
     client: discord.Client = app.ctx.client
-    display_names, username, discriminator = helper.get_member_names(
-        client, series.author_id
-    )
+    authors = [helper.author_id_to_object(client, id) for id in series.author_ids]
 
     rendered = series_template.render(
         snippets=series.snippets,
         series_name=series.name,
         series_title=series.title,
-        display_name=" / ".join(display_names),
-        username=username,
-        discriminator=discriminator,
+        authors=authors,
     )
     return response.html(rendered)

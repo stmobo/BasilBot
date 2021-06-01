@@ -9,6 +9,7 @@ from . import config
 from . import commands
 from . import web
 from .snippet import Snippet, SnippetNotFound
+from .series import check_series_schema
 
 logging.basicConfig(level=logging.INFO)
 bot_root_logger = logging.getLogger("bot")
@@ -49,7 +50,11 @@ class BasilClient(discord.Client):
             )
         )
 
-        self.redis = await aioredis.create_redis(config.get().primary_redis_url)
+        self.redis = aioredis.from_url(
+            config.get().primary_redis_url, encoding="utf-8", decode_responses=True
+        )
+
+        await check_series_schema(self.redis)
 
         if config.get().maintenance_mode:
             await self.change_presence(activity=discord.Game("Maintenance Mode"))

@@ -10,7 +10,7 @@ app = Sanic("basil")
 
 @app.before_server_start
 async def setup_redis(app, loop):
-    app.ctx.redis = await aioredis.create_redis(config.get().primary_redis_url)
+    app.ctx.redis = aioredis.from_url(config.get().primary_redis_url, encoding="utf-8", decode_responses=True)
 
 
 from .api import api
