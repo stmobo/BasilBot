@@ -127,6 +127,11 @@ a, .nav-link {
     content: ")";
 }
 
+.series-infobar {
+    display: flex;
+    align-items: center;
+}
+
 .series-part-count {
     padding-right: 0.75rem;
     border-right: 1px solid;
@@ -139,4 +144,13 @@ a, .nav-link {
 
 .series-update-time {
     padding-left: 0.75rem;
+}
+
+.series-title-input {
+    display: inline;
+    width: 33%;
+}
+
+.series-delete-confirm-label {
+    font-weight: bold;
 }

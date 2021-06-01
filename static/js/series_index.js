@@ -29,11 +29,38 @@ function AuthorDisplay(author) {
 }
 
 function SeriesEntry(series) {
+    var is_author = false;
+
+    if (SESSION_DATA.user_data) {
+        let user_id = SESSION_DATA.user_data.id;
+
+        for (let author of series.authors) {
+            if (author.id === user_id) {
+                is_author = true;
+            }
+        }
+
+        if (SESSION_DATA.user_data.is_manager) {
+            is_author = true;
+        }
+    }
+
     this.root = $("<li>", { "class": "series-entry" });
     this.series = series;
 
     this.titleBar = addSubelement(this.root, "div", { "class": "series-titlebar" });
     this.infoBar = addSubelement(this.root, "div", { "class": "series-infobar" });
+
+    if (is_author) {
+        this.titleInput = addSubelement(this.titleBar, "input", {
+            "type": "text",
+            "class": "series-title-input form-control",
+            "placeholder": "Series Title"
+        });
+
+        this.titleInput[0].value = series.title;
+        this.titleInput.hide();
+    }
 
     this.link = addSubelement(this.titleBar, "a", { "class": "series-link", "href": series.url, "text": series.title });
 
@@ -53,12 +80,14 @@ function SeriesEntry(series) {
         this.authorContainer.append(this.authorDisplays[i].root);
     }
 
-    addSubelement(this.infoBar, "span", {
+    this.textInfoContainer = addSubelement(this.infoBar, "div", { "class": "series-info-container" });
+
+    addSubelement(this.textInfoContainer, "span", {
         "class": "series-part-count",
         "text": series.n_snippets.toString() + " part" + (series.n_snippets != 1 ? "s" : "")
     });
 
-    addSubelement(this.infoBar, "span", {
+    addSubelement(this.textInfoContainer, "span", {
         "class": "series-word-count",
         "text": series.wordcount.toString() + " word" + (series.wordcount != 1 ? "s" : "")
     });
@@ -86,11 +115,131 @@ function SeriesEntry(series) {
             format_str = n_days + (n_days === 1 ? ' day ago' : ' days ago');
         }
 
-        this.lastUpdated = addSubelement(this.infoBar, "span", {
+        this.lastUpdated = addSubelement(this.textInfoContainer, "span", {
             "class": "series-update-time", "text": "Last updated " + format_str
         });
     } else {
         this.lastUpdated = null;
+    }
+
+    if (is_author) {
+        this.mainBtnContainer = addSubelement(this.infoBar, "div", {
+            "class": "ms-auto",
+        });
+
+        this.editBtn = addSubelement(this.mainBtnContainer, "button", {
+            "class": "btn btn-success btn-sm me-3",
+            "text": "Edit",
+        });
+
+        this.deleteBtn = addSubelement(this.mainBtnContainer, "button", {
+            "class": "btn btn-danger btn-sm",
+            "text": "Delete",
+        });
+
+        this.editConfirmContainer = addSubelement(this.infoBar, "div", {
+            "class": "ms-auto"
+        });
+        this.editConfirmContainer.hide();
+
+        this.editSave = addSubelement(this.editConfirmContainer, "button", {
+            "class": "btn btn-success btn-sm me-3",
+            "text": "Save"
+        });
+
+        this.editCancel = addSubelement(this.editConfirmContainer, "button", {
+            "class": "btn btn-primary btn-sm",
+            "text": "Cancel"
+        });
+
+        this.deleteConfirmContainer = addSubelement(this.infoBar, "div", {
+            "class": "ms-auto"
+        });
+        this.deleteConfirmContainer.hide();
+
+        this.deleteConfirmLabel = addSubelement(this.deleteConfirmContainer, "span", {
+            "class": "series-delete-confirm-label me-3",
+            "text": "Are you sure?"
+        });
+
+        this.deleteConfirmYes = addSubelement(this.deleteConfirmContainer, "button", {
+            "class": "btn btn-danger btn-sm me-3",
+            "text": "Delete"
+        });
+
+        this.deleteConfirmNo = addSubelement(this.deleteConfirmContainer, "button", {
+            "class": "btn btn-primary btn-sm",
+            "text": "Cancel"
+        });
+
+        this.deleteBtn.click((ev) => this.toggleDeleteConfirm(true));
+        this.editBtn.click((ev) => this.toggleEdit(true));
+    }
+}
+
+SeriesEntry.prototype.toggleEdit = function (show) {
+    if (show) {
+        this.editConfirmContainer.show();
+        this.mainBtnContainer.hide();
+
+        this.link.hide();
+        this.titleInput.show();
+
+        this.editCancel.click((ev) => this.toggleEdit(false));
+        this.editSave.click((ev) => {
+            var newTitle = this.titleInput[0].value;
+
+            fetch("/api/series/" + encodeURIComponent(this.series.tag), {
+                "method": "PATCH",
+                "headers": {
+                    "Content-Type": "application/json",
+                },
+                "body": JSON.stringify({
+                    "title": newTitle
+                })
+            }).then((resp) => {
+                if (resp.ok) {
+                    window.location.reload();
+                } else {
+                    this.toggleEdit(false);
+                }
+            });
+        });
+    } else {
+        this.editConfirmContainer.hide();
+        this.mainBtnContainer.show();
+
+        this.link.text(this.series.title).show();
+        this.titleInput.hide();
+
+        this.editCancel.off("click");
+        this.editSave.off("click");
+    }
+}
+
+SeriesEntry.prototype.toggleDeleteConfirm = function (show) {
+    if (show) {
+        this.deleteConfirmContainer.show();
+        this.mainBtnContainer.hide();
+
+        this.deleteConfirmNo.click((ev) => this.toggleDeleteConfirm(false));
+        this.deleteConfirmYes.click((ev) => {
+            fetch("/api/series/" + encodeURIComponent(this.series.tag), {
+                "method": "DELETE"
+            }).then((resp) => {
+                if (resp.ok) {
+                    window.location.reload();
+                } else {
+                    this.toggleDeleteConfirm(false);
+                }
+            });
+        });
+    } else {
+        this.deleteConfirmContainer.hide();
+        this.mainBtnContainer.show();
+
+        this.deleteConfirmNo.off("click");
+        this.deleteConfirmYes.off("click");
     }
 }
 

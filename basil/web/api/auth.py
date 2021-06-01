@@ -63,6 +63,9 @@ class DiscordUserInfo(object):
         if member is None:
             return False
 
+        if member.guild_permissions.administrator:
+            return True
+
         management_role_name: str = config.get().management_role_name.strip().casefold()
         for role in member.roles:
             if role.permissions.administrator or (
