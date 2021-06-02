@@ -76,6 +76,10 @@
         document.addEventListener("DOMContentLoaded", function (ev) {
             var container = document.getElementById("snippet-{{ snippet.message_id }}");
             container.innerHTML = discordMarkdown.toHTML({{ snippet.escaped_content }});
+
+            $(".d-spoiler", container).click((ev) => {
+                $(ev.target).toggleClass("d-spoiler-show");
+            });
         });
 
         {% endfor %}

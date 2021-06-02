@@ -89,3 +89,22 @@ body {
     width: 1.625rem;
     vertical-align: bottom;
 }
+
+.d-spoiler {
+    color: black;
+    background-color: black;
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 0.05rem 0.15rem;
+    cursor: pointer;
+}
+
+.d-spoiler:hover {
+    color: rgb(32, 32, 32);
+    background-color: rgb(32, 32, 32);
+    border-color:rgb(32, 32, 32);
+}
+
+.d-spoiler-show, .d-spoiler-show:hover {
+    color: #dcddde;
+}
