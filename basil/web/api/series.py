@@ -46,19 +46,18 @@ async def get_all_series(_req: Request):
 
 class SeriesView(HTTPMethodView):
     PATCH_SCHEMA = Schema(
-        {
-            "title": And(str, len),
-        }
+        And(
+            {
+                Optional("tag"): And(str, lambda s: len(s.strip())),
+                Optional("title"): And(str, lambda s: len(s.strip())),
+            },
+            len,
+        )
     )
 
-    async def get(self, req: Request, tag: str):
+    @staticmethod
+    def respond_with_series(series: Series, **kwargs) -> response.HTTPResponse:
         client: discord.Client = app.ctx.client
-        redis: aioredis.Redis = app.ctx.redis
-
-        try:
-            series = await Series.load(redis, tag)
-        except SeriesNotFound:
-            raise exceptions.NotFound("Could not find series " + tag)
 
         snippets = []
         for snippet in series.snippets:
@@ -71,19 +70,27 @@ class SeriesView(HTTPMethodView):
             )
 
         authors = [helper.author_id_to_object(client, id) for id in series.author_ids]
-        ret = {
-            "tag": tag,
-            "title": series.title.strip(),
-            "snippets": snippets,
-            "authors": authors,
-            "url": app.url_for("view.series", name=urllib.parse.quote(tag)),
-            "updated": series.update_time,
-        }
+        return response.json(
+            {
+                "tag": series.tag,
+                "title": series.title.strip(),
+                "snippets": snippets,
+                "authors": authors,
+                "url": app.url_for("view.series", name=urllib.parse.quote(series.tag)),
+                "updated": series.update_time,
+            },
+            **kwargs
+        )
 
-        return response.json(ret)
+    async def get(self, req: Request, tag: str):
+        try:
+            series = await Series.load(app.ctx.redis, tag)
+        except SeriesNotFound:
+            raise exceptions.NotFound("Could not find series " + tag)
+
+        return SeriesView.respond_with_series(series)
 
     async def patch(self, req: Request, tag: str):
-        client: discord.Client = app.ctx.client
         redis: aioredis.Redis = app.ctx.redis
         discord_user = await DiscordUserInfo.load(req)
 
@@ -95,17 +102,26 @@ class SeriesView(HTTPMethodView):
         except SeriesNotFound:
             raise exceptions.NotFound("Could not find series " + tag)
 
-        if discord_user.id not in series.author_ids and not discord_user.is_snippet_manager():
+        if (
+            discord_user.id not in series.author_ids
+            and not discord_user.is_snippet_manager()
+        ):
             raise exceptions.Forbidden("User is not series author")
 
-        data = self.PATCH_SCHEMA.validate(req.json)
-        series.title = data["title"].strip()
-        await series.save()
+        try:
+            data = self.PATCH_SCHEMA.validate(req.json)
+        except SchemaError:
+            raise exceptions.InvalidUsage("Payload does not fit schema")
 
-        return response.empty()
+        if "tag" in data:
+            await series.change_tag(data["tag"].strip())
+
+        if "title" in data:
+            await series.change_title(data["title"].strip())
+
+        return SeriesView.respond_with_series(series)
 
     async def delete(self, req: Request, tag: str):
-        client: discord.Client = app.ctx.client
         redis: aioredis.Redis = app.ctx.redis
         discord_user = await DiscordUserInfo.load(req)
 
@@ -117,7 +133,10 @@ class SeriesView(HTTPMethodView):
         except SeriesNotFound:
             raise exceptions.NotFound("Could not find series " + tag)
 
-        if discord_user.id not in series.author_ids and not discord_user.is_snippet_manager():
+        if (
+            discord_user.id not in series.author_ids
+            and not discord_user.is_snippet_manager()
+        ):
             raise exceptions.Forbidden("User is not series author")
 
         await series.delete()

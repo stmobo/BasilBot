@@ -182,8 +182,8 @@ async def set_title(ctx: CommandContext, args: Tuple[str], cmd: Command):
     if ctx.user.id not in series.author_ids and not ctx.authorized:
         return await ctx.reply("❌  That series does not belong to you.")
 
-    series.title = title
-    await series.save()
+    if series.title != title:
+        await series.change_title(title)
 
     return await ctx.reply(
         '✅  Set title of series `{}` to **"{}"**.'.format(tag, title)
@@ -226,7 +226,7 @@ async def rename_series(ctx: CommandContext, args: Tuple[str], cmd: Command):
     except SeriesNotFound:
         pass
 
-    await series.rename(new_tag)
+    await series.change_tag(new_tag)
     return await ctx.reply(
         "✅  Renamed series tag `{}` to `{}`.".format(old_tag, new_tag)
     )

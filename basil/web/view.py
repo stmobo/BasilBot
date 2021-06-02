@@ -29,7 +29,7 @@ async def series(_req: Request, name: str):
 
     rendered = series_template.render(
         snippets=series.snippets,
-        series_name=series.name,
+        series_name=series.tag,
         series_title=series.title,
         authors=authors,
     )
