@@ -47,6 +47,7 @@ async def get_all_series(_req: Request):
                 "authors": authors,
                 "url": app.url_for("view.series", name=urllib.parse.quote(tag)),
                 "updated": series.update_time,
+                "warnings": sorted(series.content_warnings),
             }
         )
 
@@ -90,6 +91,7 @@ class SeriesView(HTTPMethodView):
                 "authors": authors,
                 "url": app.url_for("view.series", name=urllib.parse.quote(series.tag)),
                 "updated": series.update_time,
+                "warnings": sorted(series.content_warnings),
             },
             **kwargs
         )

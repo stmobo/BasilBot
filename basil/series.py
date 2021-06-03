@@ -5,7 +5,7 @@ import aioredis
 import difflib
 import json
 import re
-from typing import List, Optional, Union, Set, Dict, AsyncIterator
+from typing import List, Optional, Union, Set, Dict, AsyncIterator, Iterator
 import time
 import urllib.parse
 
@@ -156,6 +156,18 @@ class Series:
         return urllib.parse.urljoin(
             config.get().api_base_url, "/series/" + urllib.parse.quote(self.tag)
         )
+
+    @property
+    def content_warnings(self) -> Iterator[str]:
+        seen: Set[str] = set()
+
+        for snippet in self.snippets:
+            for cw in snippet.content_warnings:
+                casefolded = cw.casefold()
+
+                if casefolded not in seen:
+                    seen.add(casefolded)
+                    yield cw
 
     def __eq__(self, o: object) -> bool:
         try:

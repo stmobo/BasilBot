@@ -98,6 +98,13 @@ function SeriesEntry(series) {
     this.infoBar = addSubelement(this.root, "div", { "class": "series-infobar" });
     this.textInfoContainer = addSubelement(this.infoBar, "div", { "class": "series-info-container" });
 
+    if (series.warnings.length > 0) {
+        this.contentWarnings = addSubelement(this.textInfoContainer, "span", {
+            "class": "series-content-warnings",
+            "text": "CW" + (series.warnings.length > 1 ? "s" : "") + ": " + series.warnings.join(", ")
+        });
+    }
+
     addSubelement(this.textInfoContainer, "span", {
         "class": "series-part-count",
         "text": series.n_snippets.toString() + " part" + (series.n_snippets != 1 ? "s" : "")

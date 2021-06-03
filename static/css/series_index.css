@@ -144,18 +144,22 @@ a, .nav-link {
     text-align: end;
 }
 
-.series-part-count {
-    padding-right: 0.75rem;
-    border-right: 1px solid;
-}
-
-.series-word-count {
+.series-info-container > span {
     padding: 0 0.75rem;
     border-right: 1px solid;
 }
 
-.series-update-time {
-    padding-left: 0.75rem;
+.series-info-container > span:first-child {
+    padding-left: 0;
+}
+
+.series-info-container > span:last-child {
+    padding-right: 0;
+    border-right: none;
+}
+
+.series-content-warnings {
+    font-weight: bold;
 }
 
 .series-title-input {

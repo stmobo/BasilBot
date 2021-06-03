@@ -6,7 +6,7 @@ import discord
 import logging
 import json
 import re
-from typing import Optional, Union, List
+from typing import Optional, Union, List, Iterator
 import urllib
 
 from discord.errors import Forbidden, NotFound
@@ -15,6 +15,7 @@ from .commands import CommandContext
 from .helper import ensure_redis
 
 IMAGE_ATTACHMENT_TYPES = set(["image/jpeg", "image/png", "image/gif", "image/webp"])
+CW_REGEX = r"^[\(\[\<\|\s]*[CcTt][Ww]\W+(\w.*?)[\)\]\|\>\s]*$"
 
 
 class SnippetNotFound(Exception):
@@ -49,6 +50,11 @@ class Snippet:
     @property
     def json_attachment_urls(self) -> str:
         return json.dumps(self.attachment_urls)
+
+    @property
+    def content_warnings(self) -> Iterator[str]:
+        for match in re.finditer(CW_REGEX, self.content, re.MULTILINE):
+            yield match[1].strip()
 
     def wordcount(self) -> int:
         stripped = re.sub(
