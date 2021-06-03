@@ -1,19 +1,26 @@
 from __future__ import annotations
 
 import aioredis
+import difflib
 import json
 import re
-from typing import List, Optional, Union, Set, Dict
+from typing import List, Optional, Union, Set, Dict, AsyncIterator
 import time
+import urllib.parse
 
+from . import config
 from .commands import CommandContext
 from .snippet import Snippet
 from .helper import ensure_redis
 
 
 SERIES_INDEX_KEY = "series_index"
+
 MAIN_TITLE_INDEX_KEY = "series_title_index:main"
 TITLE_SUBINDEX_PREFIX = "series_title_index:sub:"
+
+NORMALIZED_INDEX_KEY = "series_index_norm:main"
+NORMALIZED_SUBINDEX_PREFIX = "series_index_norm:sub:"
 
 # KEYS[1] is the series title key.
 # KEYS[2] is the main index key.
@@ -21,7 +28,7 @@ TITLE_SUBINDEX_PREFIX = "series_title_index:sub:"
 #
 # ARGV[1] is the series tag.
 # ARGV[2] is the normalized series title.
-REMOVE_SERIES_TITLE_SCRIPT = r"""
+TITLE_INDEX_REMOVE_SCRIPT = r"""
 -- delete series title key
 redis.call("delete", KEYS[1])
 
@@ -44,7 +51,7 @@ end
 # ARGV[2] is the new unnormalized series title.
 # ARGV[3] is the old normalized series title.
 # ARGV[4] is the new normalized series title.
-RENAME_SERIES_TITLE_SCRIPT = r"""
+TITLE_INDEX_RENAME_SCRIPT = r"""
 -- set series title key
 redis.call("set", KEYS[1], ARGV[2])
 
@@ -59,6 +66,45 @@ redis.call("sadd", KEYS[2], ARGV[4])
 if redis.call("scard", KEYS[3]) == 0 then
     redis.call("delete", KEYS[3])
     redis.call("srem", KEYS[2], ARGV[3])
+end
+"""
+
+# KEYS[1] is the main index key.
+# KEYS[2] is the tag subindex key.
+#
+# ARGV[1] is the unnormalized series tag.
+# ARGV[2] is the normalized series tag.
+NORMALIZED_INDEX_REMOVE_SCRIPT = r"""
+-- remove tag from subindex
+redis.call("srem", KEYS[2], ARGV[1])
+
+-- if subindex is empty, delete it
+if redis.call("scard", KEYS[2]) == 0 then
+    redis.call("delete", KEYS[2])
+    redis.call("srem", KEYS[1], ARGV[2])
+end
+"""
+
+# KEYS[1] is the main index key.
+# KEYS[2] is the old tag subindex key.
+# KEYS[3] is the new tag subindex key.
+#
+# ARGV[1] is the old unnormalized series tag.
+# ARGV[2] is the new unnormalized series tag.
+# ARGV[3] is the old normalized series tag.
+# ARGV[4] is the new normalized series tag.
+NORMALIZED_INDEX_RENAME_SCRIPT = r"""
+-- remove tag from old subindex and add tag to new subindex
+redis.call("srem", KEYS[2], ARGV[1])
+redis.call("sadd", KEYS[3], ARGV[2])
+
+-- add new normalized tag to main index
+redis.call("sadd", KEYS[1], ARGV[4])
+
+-- if old subindex is empty, delete it
+if redis.call("scard", KEYS[2]) == 0 then
+    redis.call("delete", KEYS[2])
+    redis.call("srem", KEYS[1], ARGV[3])
 end
 """
 
@@ -103,6 +149,12 @@ class Series:
     @property
     def redis_prefix(self) -> str:
         return "series:" + self.tag
+
+    @property
+    def view_url(self) -> str:
+        return urllib.parse.urljoin(
+            config.get().api_base_url, "/series/" + urllib.parse.quote(self.tag)
+        )
 
     def __eq__(self, o: object) -> bool:
         try:
@@ -158,8 +210,7 @@ class Series:
         title: str,
         *,
         normalize: bool = True,
-    ) -> Set[Series]:
-        ret: Set[Series] = set()
+    ) -> AsyncIterator[Series]:
         redis = ensure_redis(redis_or_ctx)
 
         if normalize:
@@ -168,29 +219,103 @@ class Series:
             normalized = title
 
         async for tag in redis.sscan_iter(TITLE_SUBINDEX_PREFIX + normalized):
-            series = await Series.load(redis, tag)
-            ret.add(series)
-
-        return ret
+            series = await cls.load(redis, tag)
+            yield series
 
     @classmethod
     async def find_by_title(
         cls, redis_or_ctx: Union[aioredis.Redis, CommandContext], query: str
     ) -> Dict[str, Set[Series]]:
         redis = ensure_redis(redis_or_ctx)
-        normalized = Series.normalize_name(query)
+        normalized = cls.normalize_name(query)
         ret: Dict[str, Set[Series]] = {}
 
         idx_title: str
         async for idx_title in redis.sscan_iter(MAIN_TITLE_INDEX_KEY):
             if normalized in idx_title:
-                ret[idx_title] = await cls.get_title_subindex(
+                subidx = set()
+
+                async for series in cls.get_title_subindex(
                     redis, idx_title, normalize=False
-                )
+                ):
+                    subidx.add(series)
+                ret[idx_title] = subidx
 
         return ret
 
+    @classmethod
+    async def find_by_normalized_tag(
+        cls, redis_or_ctx: Union[aioredis.Redis, CommandContext], query: str
+    ) -> AsyncIterator[Series]:
+        redis = ensure_redis(redis_or_ctx)
+        normalized = cls.normalize_name(query)
+
+        idx_tag: str
+        async for idx_tag in redis.sscan_iter(NORMALIZED_SUBINDEX_PREFIX + normalized):
+            series = await cls.load(redis, idx_tag)
+            yield series
+
+    @classmethod
+    async def search_by_tag(
+        cls, redis_or_ctx: Union[aioredis.Redis, CommandContext], query: str, **kwargs
+    ) -> List[Series]:
+        redis = ensure_redis(redis_or_ctx)
+        normalized = cls.normalize_name(query)
+        candidates = {}
+
+        idx_tag: str
+        async for main_idx_tag in redis.sscan_iter(NORMALIZED_INDEX_KEY):
+            if normalized not in idx_tag:
+                continue
+
+            async for subidx_tag in redis.sscan_iter(
+                NORMALIZED_SUBINDEX_PREFIX + main_idx_tag
+            ):
+                series = await cls.load(redis, subidx_tag)
+                candidates[series.tag] = series
+
+        close_matches = difflib.get_close_matches(query, candidates.keys(), **kwargs)
+        return [candidates[k] for k in close_matches]
+
+    @classmethod
+    async def resolve(
+        cls,
+        redis_or_ctx: Union[aioredis.Redis, CommandContext],
+        query: str,
+        author_id: int,
+    ) -> Series:
+        """Try to find a Series with inexact matching."""
+
+        try:
+            # Try and return an exact tag match first.
+            return await cls.load(redis_or_ctx, query)
+        except SeriesNotFound:
+            pass
+
+        # Next, try an inexact tag match for the given author:
+        candidates: Set[Series] = set()
+        async for series in cls.find_by_normalized_tag(redis_or_ctx, query):
+            if author_id in series.author_ids:
+                candidates.add(series)
+
+        if len(candidates) == 1:
+            return candidates.pop()
+
+        # Finally, try an inexact title match for the given author:
+        candidates = set()
+        async for series in cls.get_title_subindex(redis_or_ctx, query):
+            if author_id in series.author_ids:
+                candidates.add(series)
+
+        if len(candidates) == 1:
+            return candidates.pop()
+
+        raise SeriesNotFound("Could not resolve series query")
+
     async def save(self, update_time=True):
+        normalized_title = self.normalize_name(self.title)
+        normalized_tag = self.normalize_name(self.tag)
+
         if update_time:
             self.update_time = time.time()
 
@@ -217,13 +342,18 @@ class Series:
             if update_time:
                 tr.set(self.redis_prefix + ":updated", str(self.update_time))
 
-            normalized_title = self.normalize_name(self.title)
             tr.sadd(TITLE_SUBINDEX_PREFIX + normalized_title, self.tag)
             tr.sadd(MAIN_TITLE_INDEX_KEY, normalized_title)
+
+            tr.sadd(NORMALIZED_SUBINDEX_PREFIX + normalized_tag, self.tag)
+            tr.sadd(NORMALIZED_INDEX_KEY, normalized_tag)
 
             await tr.execute()
 
     async def delete(self):
+        normalized_tag = self.normalize_name(self.tag)
+        normalized_title = self.normalize_name(self.title)
+
         async with self.redis.pipeline(transaction=True) as tr:
             tr.delete(self.redis_prefix + ":snippets")
             tr.delete(self.redis_prefix + ":authors")
@@ -231,13 +361,21 @@ class Series:
             tr.delete(self.redis_prefix + ":subscribers")
             tr.srem(SERIES_INDEX_KEY, self.tag)
 
-            normalized_title = self.normalize_name(self.title)
-            script = tr.register_script(REMOVE_SERIES_TITLE_SCRIPT)
-            script(
+            title_remove = tr.register_script(TITLE_INDEX_REMOVE_SCRIPT)
+            title_remove(
                 [
                     self.redis_prefix + ":title",
                     MAIN_TITLE_INDEX_KEY,
                     TITLE_SUBINDEX_PREFIX + normalized_title,
+                ],
+                [self.tag, normalized_title],
+            )
+
+            norm_idx_remove = tr.register_script(NORMALIZED_INDEX_REMOVE_SCRIPT)
+            norm_idx_remove(
+                [
+                    NORMALIZED_INDEX_KEY,
+                    NORMALIZED_SUBINDEX_PREFIX + normalized_tag,
                 ],
                 [self.tag, normalized_title],
             )
@@ -247,7 +385,7 @@ class Series:
     def change_title(self, new_title: str):
         old_norm_title = self.normalize_name(self.title)
         new_norm_title = self.normalize_name(new_title)
-        script = self.redis.register_script(RENAME_SERIES_TITLE_SCRIPT)
+        script = self.redis.register_script(TITLE_INDEX_RENAME_SCRIPT)
 
         self.title = new_title
         return script(
@@ -261,6 +399,9 @@ class Series:
         )
 
     async def change_tag(self, new_tag: str):
+        old_norm_tag = self.normalize_name(self.tag)
+        new_norm_tag = self.normalize_name(new_tag)
+        norm_title = self.normalize_name(self.title)
         new_prefix = "series:" + new_tag
 
         async with self.redis.pipeline(transaction=True) as tr:
@@ -292,6 +433,19 @@ class Series:
             tr.srem(SERIES_INDEX_KEY, self.tag)
             tr.sadd(SERIES_INDEX_KEY, new_tag)
 
+            tr.srem(TITLE_SUBINDEX_PREFIX + norm_title, self.tag)
+            tr.sadd(TITLE_SUBINDEX_PREFIX + norm_title, new_tag)
+
+            script = tr.register_script(NORMALIZED_INDEX_RENAME_SCRIPT)
+            script(
+                [
+                    NORMALIZED_INDEX_KEY,
+                    NORMALIZED_SUBINDEX_PREFIX + old_norm_tag,
+                    NORMALIZED_SUBINDEX_PREFIX + new_norm_tag,
+                ],
+                [self.tag, new_tag, old_norm_tag, new_norm_tag],
+            )
+
             await tr.execute()
 
         self.tag = new_tag
@@ -299,18 +453,24 @@ class Series:
 
 async def check_series_schema(redis: aioredis.Redis):
     index_exists = bool(int(await redis.exists(SERIES_INDEX_KEY)))
+    norm_index_exists = bool(int(await redis.exists(NORMALIZED_INDEX_KEY)))
     title_index_exists = bool(int(await redis.exists(MAIN_TITLE_INDEX_KEY)))
 
     async with redis.pipeline(transaction=True) as tr:
-        do_exec = (not index_exists) or (not title_index_exists)
+        do_exec = not (index_exists and norm_index_exists and title_index_exists)
 
         key: str
         async for key in redis.scan_iter(match="series:*:snippets"):
             tag = key.split(":", 2)[1]
+            norm_tag = Series.normalize_name(tag)
             redis_prefix = "series:" + tag
 
             if not index_exists:
                 tr.sadd(SERIES_INDEX_KEY, tag)
+
+            if not norm_index_exists:
+                tr.sadd(NORMALIZED_INDEX_KEY, norm_tag)
+                tr.sadd(NORMALIZED_SUBINDEX_PREFIX + norm_tag, tag)
 
             if not title_index_exists:
                 title = await redis.get("series:" + tag + ":title")

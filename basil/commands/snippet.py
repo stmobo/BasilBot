@@ -6,7 +6,7 @@ from typing import Tuple, Union
 import urllib.parse
 
 from . import command, CommandContext, Command
-from ..snippet import Snippet, SnippetNotFound
+from ..snippet import Snippet
 from ..series import SERIES_INDEX_KEY, Series, SeriesNotFound
 from .. import config
 
@@ -46,11 +46,12 @@ async def register_snippet(ctx: CommandContext, args: Tuple[str], cmd: Command):
     if reply_msg.author.id != ctx.user.id and not ctx.authorized:
         return await ctx.reply("❌  That snippet was not posted by you.")
 
-    name = " ".join(args)
+    name = " ".join(args).strip()
     new_series = False
+    series: Series
 
     try:
-        series = await Series.load(ctx, name)
+        series = await Series.resolve(ctx, name, ctx.user.id)
     except SeriesNotFound:
         series = Series(ctx.redis, name, set([ctx.user.id]), [])
         new_series = True
@@ -81,14 +82,13 @@ async def register_snippet(ctx: CommandContext, args: Tuple[str], cmd: Command):
         if message_id is None:
             break
 
-        try:
-            channel = ctx.client.get_channel(channel_id)
-        except discord.NotFound:
+        channel: discord.TextChannel = ctx.client.get_channel(channel_id)
+        if channel is None:
             break
 
         try:
             cur_msg = await channel.fetch_message(message_id)
-        except discord.NotFound:
+        except (discord.NotFound, discord.Forbidden) as e:
             break
 
     if len(new_snippets) == 0:
@@ -107,7 +107,7 @@ async def register_snippet(ctx: CommandContext, args: Tuple[str], cmd: Command):
     if new_series:
         await ctx.reply(
             '✅  Created series `{}` ("**{}**") with {} snippet{}.'.format(
-                name,
+                series.tag,
                 series.title,
                 len(series.snippets),
                 ("s" if len(series.snippets) > 1 else ""),
@@ -118,17 +118,15 @@ async def register_snippet(ctx: CommandContext, args: Tuple[str], cmd: Command):
             '✅  Appended {} new snippet{} to series `{}` ("{}").'.format(
                 len(new_snippets),
                 ("s" if len(new_snippets) > 1 else ""),
-                name,
+                series.tag,
                 series.title,
             )
         )
 
-    url = urllib.parse.urljoin(
-        config.get().api_base_url, "/series/" + urllib.parse.quote(name)
-    )
-
     await ctx.reply(
-        "ℹ️  **Link to series:** " + url, mention_author=False, ephemeral=False
+        "ℹ️  **Link to series:** " + series.view_url,
+        mention_author=False,
+        ephemeral=False,
     )
 
     if " " in name:
@@ -145,7 +143,7 @@ async def register_snippet(ctx: CommandContext, args: Tuple[str], cmd: Command):
         try:
             await user.send(
                 "ℹ️  Snippet series **{}** has updated!\n**Link to series:** {}".format(
-                    series.title, url
+                    series.title, series.view_url
                 )
             )
         except Exception:
@@ -352,16 +350,15 @@ async def get_link(ctx: CommandContext, args: Tuple[str], cmd: Command):
     tag = args[0]
 
     try:
-        await Series.load(ctx, tag)
+        series = await Series.load(ctx, tag)
     except SeriesNotFound:
         return await ctx.reply(
             "❌  There exists no series going by the tag `{}`.".format(tag)
         )
 
-    url = urllib.parse.urljoin(
-        config.get().api_base_url, "/series/" + urllib.parse.quote(tag)
+    return await ctx.reply(
+        "ℹ️  **Link to series:** " + series.view_url, ephemeral=False
     )
-    return await ctx.reply("ℹ️  **Link to series:** " + url, ephemeral=False)
 
 
 @command("index")
