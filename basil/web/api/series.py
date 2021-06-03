@@ -1,4 +1,6 @@
 from __future__ import annotations
+from basil.snippet import Snippet
+from typing import Dict, List
 
 import aioredis
 import discord
@@ -50,6 +52,7 @@ class SeriesView(HTTPMethodView):
             {
                 Optional("tag"): And(str, lambda s: len(s.strip())),
                 Optional("title"): And(str, lambda s: len(s.strip())),
+                Optional("snippets"): And([int], len),
             },
             len,
         )
@@ -118,6 +121,27 @@ class SeriesView(HTTPMethodView):
 
         if "title" in data:
             await series.change_title(data["title"].strip())
+
+        if "snippets" in data:
+            old_snippets: Dict[int, Snippet] = {}
+            for snippet in series.snippets:
+                old_snippets[snippet.message_id] = snippet
+
+            new_snippet_seq: List[Snippet] = []
+            snippet_id: int
+            for snippet_id in data["snippets"]:
+                try:
+                    new_snippet_seq.append(old_snippets[snippet_id])
+                except KeyError:
+                    raise exceptions.InvalidUsage(
+                        "Cannot add new snippets to series"
+                    ) from None
+
+            if len(new_snippet_seq) == 0:
+                raise exceptions.InvalidUsage("Series cannot be empty")
+
+            series.snippets = new_snippet_seq
+            await series.save()
 
         return SeriesView.respond_with_series(series)
 

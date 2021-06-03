@@ -1,4 +1,5 @@
 from __future__ import annotations
+from operator import eq
 
 import aioredis
 import discord
@@ -36,7 +37,7 @@ class Snippet:
         stripped = re.sub(
             r"\<(?:\@[\!\&]?|\#|a?\:\w+\:)\d+\>", "", self.content
         ).strip()
-        
+
         return len(stripped.split())
 
     @classmethod
