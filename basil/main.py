@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import aioredis
 import discord
 import logging
@@ -9,7 +10,7 @@ from . import config
 from . import commands
 from . import web
 from .snippet import Snippet, SnippetNotFound, scan_message_channels
-from .series import check_series_schema
+from .series import check_series_schema, get_author_count, get_series_count
 
 logging.basicConfig(level=logging.INFO)
 bot_root_logger = logging.getLogger("bot")
@@ -43,6 +44,36 @@ class BasilClient(discord.Client):
         else:
             return cls._inst
 
+    async def update_presence_loop(self):
+        ctr = 0
+        while True:
+            try:
+                if config.get().maintenance_mode:
+                    await self.change_presence(
+                        activity=discord.Game("Maintenance Mode")
+                    )
+                else:
+                    if ctr == 0:
+                        series_count = await get_series_count(self.redis)
+                        await self.change_presence(
+                            activity=discord.Game(str(series_count) + " Snippets")
+                        )
+                    elif ctr == 1:
+                        author_count = await get_author_count(self.redis)
+                        await self.change_presence(
+                            activity=discord.Game(str(author_count) + " Authors")
+                        )
+                    elif ctr == 2:
+                        prefix = config.get().summon_prefix
+                        await self.change_presence(
+                            activity=discord.Game(prefix + "help")
+                        )
+                    ctr = (ctr + 1) % 3
+            except Exception:
+                logging.exception("Caught exception in presence update loop")
+
+            await asyncio.sleep(15)
+
     async def on_ready(self):
         logging.info(
             "Logged in as {name} ({id})\n------\nInvite URL:\nhttps://discordapp.com/api/oauth2/authorize?client_id={id}&scope=bot&permissions={perms}".format(
@@ -56,11 +87,7 @@ class BasilClient(discord.Client):
 
         await check_series_schema(self.redis)
         await scan_message_channels(self, self.redis)
-
-        if config.get().maintenance_mode:
-            await self.change_presence(activity=discord.Game("Maintenance Mode"))
-        else:
-            await self.change_presence(activity=discord.Game("Organizing Snippets"))
+        asyncio.create_task(self.update_presence_loop())
 
         self.ready = True
 

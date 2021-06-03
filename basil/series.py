@@ -1,4 +1,5 @@
 from __future__ import annotations
+import logging
 
 import aioredis
 import difflib
@@ -490,3 +491,22 @@ async def check_series_schema(redis: aioredis.Redis):
 
         if do_exec:
             await tr.execute()
+
+
+async def get_series_count(redis: aioredis.Redis) -> int:
+    return await redis.scard(SERIES_INDEX_KEY)
+
+
+async def get_author_count(redis: aioredis.Redis) -> int:
+    authors: Set[int] = set()
+
+    tag: str
+    async for tag in redis.sscan_iter(SERIES_INDEX_KEY):
+        try:
+            data = await redis.get("series:" + tag + ":authors")
+            for author_id in json.loads(data):
+                authors.add(author_id)
+        except Exception:
+            logging.exception("Caught exception when counting authors")
+
+    return len(authors)
