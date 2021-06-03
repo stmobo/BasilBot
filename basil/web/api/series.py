@@ -116,10 +116,10 @@ class SeriesView(HTTPMethodView):
         except SchemaError:
             raise exceptions.InvalidUsage("Payload does not fit schema")
 
-        if "tag" in data:
+        if "tag" in data and data["tag"].strip() != series.tag:
             await series.change_tag(data["tag"].strip())
 
-        if "title" in data:
+        if "title" in data and data["title"].strip() != series.title:
             await series.change_title(data["title"].strip())
 
         if "snippets" in data:
