@@ -76,6 +76,8 @@ class SeriesView(HTTPMethodView):
                     "content": snippet.content,
                     "message_id": snippet.message_id,
                     "author_id": snippet.author_id,
+                    "channel_id": snippet.channel_id,
+                    "attachment_urls": snippet.attachment_urls,
                 }
             )
 

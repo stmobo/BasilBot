@@ -8,7 +8,7 @@ from typing import Optional
 from . import config
 from . import commands
 from . import web
-from .snippet import Snippet, SnippetNotFound
+from .snippet import Snippet, SnippetNotFound, scan_message_channels
 from .series import check_series_schema
 
 logging.basicConfig(level=logging.INFO)
@@ -55,6 +55,7 @@ class BasilClient(discord.Client):
         )
 
         await check_series_schema(self.redis)
+        await scan_message_channels(self, self.redis)
 
         if config.get().maintenance_mode:
             await self.change_presence(activity=discord.Game("Maintenance Mode"))
@@ -88,7 +89,7 @@ class BasilClient(discord.Client):
         message: discord.Message = await channel.fetch_message(msg_id)
 
         snippet.content = message.content
-        await snippet.save(self.redis)
+        await snippet.save()
 
 
 @web.app.before_server_start

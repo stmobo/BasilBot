@@ -108,3 +108,77 @@ body {
 .d-spoiler-show, .d-spoiler-show:hover {
     color: #dcddde;
 }
+
+.d-link {
+    color: #6aa6ff;
+    text-decoration: none;
+    z-index: 0;
+}
+
+.d-link:hover {
+    color: #6aa6ff;
+    text-decoration: underline;
+}
+
+.d-img-wrapper {
+    position: relative;
+    max-width: 33%;
+    width: max-content;
+}
+
+.d-img {
+    max-width: 100%;
+    height: auto;
+}
+
+.d-img-spoiler {
+    filter: blur(20px);
+}
+
+.d-img-wrapper {
+    overflow: hidden;
+    border-radius: 5px;
+}
+
+.d-spoiler-cover {
+    position: absolute;
+    display: flex;
+
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
+
+.d-spoiler-cover:hover .d-spoiler-img-label {
+    background-color: rgba(0, 0, 0, 0.9);
+    color: white;
+}
+
+.d-spoiler-img-label {
+    display: flex;
+    text-transform: uppercase;
+
+    padding: 0.4rem 0.75rem;
+    font-weight: bold;
+    font-size: 1.2rem;
+
+    border: 3px solid rgb(220, 221, 222);
+    border-radius: 20px;
+
+    background-color: rgba(0, 0, 0, 0.6);
+    color: #dcddde;
+
+    justify-content: center;
+    align-items: center;
+    vertical-align: middle;
+
+    pointer-events: none;
+}
+
+

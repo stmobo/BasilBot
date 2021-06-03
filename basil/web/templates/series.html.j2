@@ -5,7 +5,12 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ series_title }} by {{ display_name }}</title>
+    <title>
+    {{ series_title }} by
+    {% for author in authors %}
+        {{ author.display_name | trim }}{% if not loop.last  %}, {% endif %}
+    {% endfor %}
+    </title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
     <link rel="stylesheet" href="/css/snippet.css">
@@ -70,19 +75,15 @@
         integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI=" crossorigin="anonymous"></script>
     <script src="/js/discord-markdown.min.js"></script>
     <script src="/js/common.js"></script>
+    <script src="/js/series.js"></script>
     <script>
-        {% for snippet in snippets %}
-
         document.addEventListener("DOMContentLoaded", function (ev) {
-            var container = document.getElementById("snippet-{{ snippet.message_id }}");
-            container.innerHTML = discordMarkdown.toHTML({{ snippet.escaped_content }});
-
-            $(".d-spoiler", container).click((ev) => {
-                $(ev.target).toggleClass("d-spoiler-show");
-            });
-        });
-
+        
+        {% for snippet in snippets %}
+            renderSnippet("{{ snippet.message_id }}", {{ snippet.escaped_content }}, {{ snippet.json_attachment_urls }});
         {% endfor %}
+
+        });
     </script>
 </body>
 
