@@ -30,14 +30,14 @@ NORMALIZED_SUBINDEX_PREFIX = "series_index_norm:sub:"
 # ARGV[2] is the normalized series title.
 TITLE_INDEX_REMOVE_SCRIPT = r"""
 -- delete series title key
-redis.call("delete", KEYS[1])
+redis.call("del", KEYS[1])
 
 -- remove tag from subindex
 redis.call("srem", KEYS[3], ARGV[1])
 
 -- if subindex is empty, delete it
 if redis.call("scard", KEYS[3]) == 0 then
-    redis.call("delete", KEYS[3])
+    redis.call("del", KEYS[3])
     redis.call("srem", KEYS[2], ARGV[2])
 end
 """
@@ -64,7 +64,7 @@ redis.call("sadd", KEYS[2], ARGV[4])
 
 -- if old subindex is empty, delete it
 if redis.call("scard", KEYS[3]) == 0 then
-    redis.call("delete", KEYS[3])
+    redis.call("del", KEYS[3])
     redis.call("srem", KEYS[2], ARGV[3])
 end
 """
@@ -80,7 +80,7 @@ redis.call("srem", KEYS[2], ARGV[1])
 
 -- if subindex is empty, delete it
 if redis.call("scard", KEYS[2]) == 0 then
-    redis.call("delete", KEYS[2])
+    redis.call("del", KEYS[2])
     redis.call("srem", KEYS[1], ARGV[2])
 end
 """
@@ -103,7 +103,7 @@ redis.call("sadd", KEYS[1], ARGV[4])
 
 -- if old subindex is empty, delete it
 if redis.call("scard", KEYS[2]) == 0 then
-    redis.call("delete", KEYS[2])
+    redis.call("del", KEYS[2])
     redis.call("srem", KEYS[1], ARGV[3])
 end
 """
@@ -362,7 +362,7 @@ class Series:
             tr.srem(SERIES_INDEX_KEY, self.tag)
 
             title_remove = tr.register_script(TITLE_INDEX_REMOVE_SCRIPT)
-            title_remove(
+            await title_remove(
                 [
                     self.redis_prefix + ":title",
                     MAIN_TITLE_INDEX_KEY,
@@ -372,7 +372,7 @@ class Series:
             )
 
             norm_idx_remove = tr.register_script(NORMALIZED_INDEX_REMOVE_SCRIPT)
-            norm_idx_remove(
+            await norm_idx_remove(
                 [
                     NORMALIZED_INDEX_KEY,
                     NORMALIZED_SUBINDEX_PREFIX + normalized_tag,
@@ -437,7 +437,7 @@ class Series:
             tr.sadd(TITLE_SUBINDEX_PREFIX + norm_title, new_tag)
 
             script = tr.register_script(NORMALIZED_INDEX_RENAME_SCRIPT)
-            script(
+            await script(
                 [
                     NORMALIZED_INDEX_KEY,
                     NORMALIZED_SUBINDEX_PREFIX + old_norm_tag,
@@ -474,6 +474,8 @@ async def check_series_schema(redis: aioredis.Redis):
 
             if not title_index_exists:
                 title = await redis.get("series:" + tag + ":title")
+                if title is None:
+                    title = tag.replace("_", " ").replace("-", " ").strip()
                 normalized_title = Series.normalize_name(title)
 
                 tr.sadd(MAIN_TITLE_INDEX_KEY, normalized_title)

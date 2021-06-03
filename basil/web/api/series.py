@@ -17,6 +17,13 @@ series_api = Blueprint("series_api", url_prefix="/series")
 app = Sanic.get_app("basil")
 
 
+@series_api.exception(
+    exceptions.NotFound, exceptions.Forbidden, exceptions.InvalidUsage
+)
+async def api_exception_handler(_req: Request, exception: exceptions.SanicException):
+    return response.text(exception.args[0], status=exception.status_code)
+
+
 @series_api.get("/")
 async def get_all_series(_req: Request):
     client: discord.Client = app.ctx.client
@@ -117,7 +124,17 @@ class SeriesView(HTTPMethodView):
             raise exceptions.InvalidUsage("Payload does not fit schema")
 
         if "tag" in data and data["tag"].strip() != series.tag:
-            await series.change_tag(data["tag"].strip())
+            new_tag = data["tag"].strip()
+
+            try:
+                await Series.load(redis, new_tag)
+                raise exceptions.InvalidUsage(
+                    'A series with tag "{}" already exists.'.format(new_tag)
+                )
+            except SeriesNotFound:
+                pass
+
+            await series.change_tag(new_tag)
 
         if "title" in data and data["title"].strip() != series.title:
             await series.change_title(data["title"].strip())

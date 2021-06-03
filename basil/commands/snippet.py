@@ -129,7 +129,7 @@ async def register_snippet(ctx: CommandContext, args: Tuple[str], cmd: Command):
         ephemeral=False,
     )
 
-    if " " in name:
+    if new_series and " " in name:
         await ctx.reply(
             "⚠️  **Warning:** Your snippet tag has spaces in it. You'll need to **surround the tag name with quotes** if you're using it in other commands!"
         )
