@@ -93,6 +93,8 @@ class SeriesView(HTTPMethodView):
         )
 
     async def get(self, req: Request, tag: str):
+        tag = urllib.parse.unquote(tag)
+
         try:
             series = await Series.load(app.ctx.redis, tag)
         except SeriesNotFound:
@@ -101,6 +103,7 @@ class SeriesView(HTTPMethodView):
         return SeriesView.respond_with_series(series)
 
     async def patch(self, req: Request, tag: str):
+        tag = urllib.parse.unquote(tag)
         redis: aioredis.Redis = app.ctx.redis
         discord_user = await DiscordUserInfo.load(req)
 
@@ -163,6 +166,7 @@ class SeriesView(HTTPMethodView):
         return SeriesView.respond_with_series(series)
 
     async def delete(self, req: Request, tag: str):
+        tag = urllib.parse.unquote(tag)
         redis: aioredis.Redis = app.ctx.redis
         discord_user = await DiscordUserInfo.load(req)
 
