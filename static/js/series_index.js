@@ -95,15 +95,15 @@ function SeriesEntry(series) {
         this.authorContainer.append(this.authorDisplays[i].root);
     }
 
-    this.infoBar = addSubelement(this.root, "div", { "class": "series-infobar" });
-    this.textInfoContainer = addSubelement(this.infoBar, "div", { "class": "series-info-container" });
-
     if (series.warnings.length > 0) {
-        this.contentWarnings = addSubelement(this.textInfoContainer, "span", {
+        this.contentWarnings = addSubelement(this.root, "div", {
             "class": "series-content-warnings",
             "text": "CW" + (series.warnings.length > 1 ? "s" : "") + ": " + series.warnings.join(", ")
         });
     }
+
+    this.infoBar = addSubelement(this.root, "div", { "class": "series-infobar" });
+    this.textInfoContainer = addSubelement(this.infoBar, "div", { "class": "series-info-container" });
 
     addSubelement(this.textInfoContainer, "span", {
         "class": "series-part-count",
@@ -153,7 +153,7 @@ function SeriesEntry(series) {
         this.editErrorText.hide();
 
         this.mainBtnContainer = addSubelement(this.infoBar, "div", {
-            "class": "ms-auto",
+            "class": "series-btn-container",
         });
 
         this.editTagBtn = addSubelement(this.mainBtnContainer, "button", {
@@ -172,7 +172,7 @@ function SeriesEntry(series) {
         });
 
         this.editConfirmContainer = addSubelement(this.infoBar, "div", {
-            "class": "ms-auto"
+            "class": "series-btn-container"
         });
         this.editConfirmContainer.hide();
 
@@ -187,7 +187,7 @@ function SeriesEntry(series) {
         });
 
         this.deleteConfirmContainer = addSubelement(this.infoBar, "div", {
-            "class": "ms-auto"
+            "class": "series-btn-container"
         });
         this.deleteConfirmContainer.hide();
 
