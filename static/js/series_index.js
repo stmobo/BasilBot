@@ -49,7 +49,6 @@ function SeriesEntry(series) {
     this.series = series;
 
     this.titleBar = addSubelement(this.root, "div", { "class": "series-titlebar" });
-    this.infoBar = addSubelement(this.root, "div", { "class": "series-infobar" });
 
     if (is_author) {
         this.titleInput = addSubelement(this.titleBar, "input", {
@@ -60,6 +59,22 @@ function SeriesEntry(series) {
 
         this.titleInput[0].value = series.title;
         this.titleInput.hide();
+
+        this.tagInputBar = addSubelement(this.root, "div", { "class": "series-tag-edit-bar" });
+        this.tagInputLabel = addSubelement(this.tagInputBar, "label", {
+            "class": "series-tag-input-label",
+            "text": "Change Series Tag: ",
+            "for": "tag-edit-" + series.tag,
+        });
+        this.tagInput = addSubelement(this.tagInputBar, "input", {
+            "type": "text",
+            "class": "series-tag-input form-control",
+            "placeholder": "Series Title",
+            "id": "tag-edit-" + series.tag,
+        });
+        this.tagInput[0].value = series.tag;
+
+        this.tagInputBar.hide();
     }
 
     this.link = addSubelement(this.titleBar, "a", { "class": "series-link", "href": series.url, "text": series.title });
@@ -80,6 +95,7 @@ function SeriesEntry(series) {
         this.authorContainer.append(this.authorDisplays[i].root);
     }
 
+    this.infoBar = addSubelement(this.root, "div", { "class": "series-infobar" });
     this.textInfoContainer = addSubelement(this.infoBar, "div", { "class": "series-info-container" });
 
     addSubelement(this.textInfoContainer, "span", {
@@ -123,13 +139,24 @@ function SeriesEntry(series) {
     }
 
     if (is_author) {
+        this.editErrorText = addSubelement(this.textInfoContainer, "span", {
+            "class": "series-edit-error",
+            "text": ""
+        });
+        this.editErrorText.hide();
+
         this.mainBtnContainer = addSubelement(this.infoBar, "div", {
             "class": "ms-auto",
         });
 
-        this.editBtn = addSubelement(this.mainBtnContainer, "button", {
+        this.editTagBtn = addSubelement(this.mainBtnContainer, "button", {
             "class": "btn btn-success btn-sm me-3",
-            "text": "Edit",
+            "text": "Change Tag",
+        });
+
+        this.editTitleBtn = addSubelement(this.mainBtnContainer, "button", {
+            "class": "btn btn-success btn-sm me-3",
+            "text": "Edit Title",
         });
 
         this.deleteBtn = addSubelement(this.mainBtnContainer, "button", {
@@ -173,19 +200,23 @@ function SeriesEntry(series) {
         });
 
         this.deleteBtn.click((ev) => this.toggleDeleteConfirm(true));
-        this.editBtn.click((ev) => this.toggleEdit(true));
+        this.editTitleBtn.click((ev) => this.toggleEditTitle(true));
+        this.editTagBtn.click((ev) => this.toggleEditTag(true));
     }
 }
 
-SeriesEntry.prototype.toggleEdit = function (show) {
+SeriesEntry.prototype.toggleEditTitle = function (show) {
+    this.editErrorText.text("").hide();
+
     if (show) {
         this.editConfirmContainer.show();
         this.mainBtnContainer.hide();
 
+        this.titleInput[0].value = this.series.title;
         this.link.hide();
         this.titleInput.show();
 
-        this.editCancel.click((ev) => this.toggleEdit(false));
+        this.editCancel.click((ev) => this.toggleEditTitle(false));
         this.editSave.click((ev) => {
             var newTitle = this.titleInput[0].value;
 
@@ -200,9 +231,12 @@ SeriesEntry.prototype.toggleEdit = function (show) {
             }).then((resp) => {
                 if (resp.ok) {
                     window.location.reload();
+                    return "";
                 } else {
-                    this.toggleEdit(false);
+                    return resp.text();
                 }
+            }).then((text) => {
+                this.editErrorText.text(text).show();
             });
         });
     } else {
@@ -217,7 +251,55 @@ SeriesEntry.prototype.toggleEdit = function (show) {
     }
 }
 
+SeriesEntry.prototype.toggleEditTag = function (show) {
+    this.editErrorText.text("").hide();
+
+    if (show) {
+        this.editConfirmContainer.show();
+        this.mainBtnContainer.hide();
+
+        this.tagInput[0].value = this.series.tag;
+        this.titleBar.hide();
+        this.tagInputBar.show();
+
+        this.editCancel.click((ev) => this.toggleEditTag(false));
+        this.editSave.click((ev) => {
+            var newTag = this.tagInput[0].value;
+
+            fetch("/api/series/" + encodeURIComponent(this.series.tag), {
+                "method": "PATCH",
+                "headers": {
+                    "Content-Type": "application/json",
+                },
+                "body": JSON.stringify({
+                    "tag": newTag
+                })
+            }).then((resp) => {
+                if (resp.ok) {
+                    window.location.reload();
+                    return "";
+                } else {
+                    return resp.text();
+                }
+            }).then((text) => {
+                this.editErrorText.text(text).show();
+            });
+        });
+    } else {
+        this.editConfirmContainer.hide();
+        this.mainBtnContainer.show();
+
+        this.titleBar.show();
+        this.tagInputBar.hide();
+
+        this.editCancel.off("click");
+        this.editSave.off("click");
+    }
+}
+
 SeriesEntry.prototype.toggleDeleteConfirm = function (show) {
+    this.editErrorText.text("").hide();
+
     if (show) {
         this.deleteConfirmContainer.show();
         this.mainBtnContainer.hide();
@@ -229,9 +311,12 @@ SeriesEntry.prototype.toggleDeleteConfirm = function (show) {
             }).then((resp) => {
                 if (resp.ok) {
                     window.location.reload();
+                    return "";
                 } else {
-                    this.toggleDeleteConfirm(false);
+                    return resp.text();
                 }
+            }).then((text) => {
+                this.editErrorText.text(text).show();
             });
         });
     } else {

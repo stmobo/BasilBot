@@ -132,6 +132,18 @@ a, .nav-link {
     align-items: center;
 }
 
+.series-info-container {
+    display: flex;
+    flex: auto;
+}
+
+.series-edit-error {
+    flex: auto;
+    margin-left: auto;
+    margin-right: .5rem;
+    text-align: end;
+}
+
 .series-part-count {
     padding-right: 0.75rem;
     border-right: 1px solid;
@@ -149,6 +161,21 @@ a, .nav-link {
 .series-title-input {
     display: inline;
     width: 33%;
+}
+
+.series-tag-edit-bar {
+    margin-bottom: .25rem;
+}
+
+.series-tag-input-label {
+    font-weight: bold;
+}
+
+.series-tag-input {
+    display: inline;
+    width: 33%;
+    padding: .125rem .5rem;
+    margin-left: .5rem;
 }
 
 .series-delete-confirm-label {
