@@ -24,9 +24,9 @@ async def api_exception_handler(_req: Request, exception: exceptions.SanicExcept
 
 
 @series_api.get("/")
-async def get_all_series(_req: Request):
-    client: discord.Client = app.ctx.client
+async def get_all_series(req: Request):
     redis: aioredis.Redis = app.ctx.redis
+    discord_user = await DiscordUserInfo.load(req)
     ret = []
 
     tag: str
@@ -36,7 +36,13 @@ async def get_all_series(_req: Request):
         except SeriesNotFound:
             continue
 
-        ret.append(series.as_dict_trimmed)
+        d = series.as_dict_trimmed
+        if discord_user is not None:
+            d["can_edit"] = series.can_edit(discord_user.as_author)
+        else:
+            d["can_edit"] = False
+
+        ret.append(d)
 
     return response.json(ret)
 
@@ -53,6 +59,20 @@ class SeriesView(HTTPMethodView):
         )
     )
 
+    @staticmethod
+    async def respond_with_series(
+        req: Request, series: Series
+    ) -> response.HTTPResponse:
+        ret = series.as_dict
+        discord_user = await DiscordUserInfo.load(req)
+
+        if discord_user is not None:
+            ret["can_edit"] = series.can_edit(discord_user.as_author)
+        else:
+            ret["can_edit"] = False
+
+        return response.json(ret)
+
     async def get(self, req: Request, tag: str):
         tag = urllib.parse.unquote(tag)
 
@@ -61,7 +81,7 @@ class SeriesView(HTTPMethodView):
         except SeriesNotFound:
             raise exceptions.NotFound("Could not find series " + tag)
 
-        return response.json(series.as_dict)
+        return SeriesView.respond_with_series(req, series)
 
     async def patch(self, req: Request, tag: str):
         tag = urllib.parse.unquote(tag)
@@ -76,9 +96,10 @@ class SeriesView(HTTPMethodView):
         except SeriesNotFound:
             raise exceptions.NotFound("Could not find series " + tag)
 
-        if (
-            discord_user.id not in series.author_ids
-            and not discord_user.is_snippet_manager()
+        author = discord_user.as_author
+
+        if discord_user.id not in series.author_ids and not series.is_snippet_manager(
+            author
         ):
             raise exceptions.Forbidden("User is not series author")
 
@@ -124,7 +145,7 @@ class SeriesView(HTTPMethodView):
             series.snippets = new_snippet_seq
             await series.save()
 
-        return response.json(series.as_dict)
+        return SeriesView.respond_with_series(req, series)
 
     async def delete(self, req: Request, tag: str):
         tag = urllib.parse.unquote(tag)

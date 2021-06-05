@@ -9,6 +9,7 @@ from . import command, CommandContext, Command
 from ..snippet import Snippet
 from ..series import SERIES_INDEX_KEY, Series, SeriesNotFound
 from ..config import config
+from ..author import Author
 
 
 @command("register")
@@ -42,6 +43,7 @@ async def register_snippet(ctx: CommandContext, args: Tuple[str], cmd: Command):
             "❌  Could not retrieve snippet message.\nℹ️ This command must be used as a **reply** to a snippet that you have posted."
         )
 
+    author = Author.get_by_id(ctx.user.id)
     reply_msg: discord.Message = ref.resolved
     if reply_msg.author.id != ctx.user.id and not ctx.authorized:
         return await ctx.reply("❌  That snippet was not posted by you.")
@@ -52,12 +54,11 @@ async def register_snippet(ctx: CommandContext, args: Tuple[str], cmd: Command):
 
     try:
         series = await Series.resolve(ctx, name, ctx.user.id)
+        if not series.can_edit(author):
+            return await ctx.reply("❌  That series does not belong to you.")
     except SeriesNotFound:
         series = Series(ctx.redis, name, set([ctx.user.id]), [])
         new_series = True
-
-    if ctx.user.id not in series.author_ids and not ctx.authorized:
-        return await ctx.reply("❌  That series does not belong to you.")
 
     previous_snippet_ids = set(s.message_id for s in series.snippets)
     new_snippets = []
@@ -169,6 +170,7 @@ async def set_title(ctx: CommandContext, args: Tuple[str], cmd: Command):
         )
 
     tag, title = args
+    author = Author.get_by_id(ctx.user.id)
 
     try:
         series = await Series.load(ctx, tag)
@@ -177,7 +179,7 @@ async def set_title(ctx: CommandContext, args: Tuple[str], cmd: Command):
             "❌  There exists no series going by the tag `{}`.".format(tag)
         )
 
-    if ctx.user.id not in series.author_ids and not ctx.authorized:
+    if not series.can_edit(author):
         return await ctx.reply("❌  That series does not belong to you.")
 
     if series.title != title:
@@ -205,6 +207,7 @@ async def rename_series(ctx: CommandContext, args: Tuple[str], cmd: Command):
         )
 
     old_tag, new_tag = args
+    author = Author.get_by_id(ctx.user.id)
 
     try:
         series = await Series.load(ctx, old_tag)
@@ -213,7 +216,7 @@ async def rename_series(ctx: CommandContext, args: Tuple[str], cmd: Command):
             "❌  There exists no series going by the tag `{}`.".format(old_tag)
         )
 
-    if ctx.user.id not in series.author_ids and not ctx.authorized:
+    if not series.can_edit(author):
         return await ctx.reply("❌  That series does not belong to you.")
 
     try:
@@ -245,6 +248,7 @@ async def delete_series(ctx: CommandContext, args: Tuple[str], cmd: Command):
         )
 
     tag = args[0]
+    author = Author.get_by_id(ctx.user.id)
 
     try:
         series = await Series.load(ctx, tag)
@@ -253,7 +257,7 @@ async def delete_series(ctx: CommandContext, args: Tuple[str], cmd: Command):
             "❌  There exists no series going by the tag `{}`.".format(tag)
         )
 
-    if ctx.user.id not in series.author_ids and not ctx.authorized:
+    if not series.can_edit(author):
         return await ctx.reply("❌  That series does not belong to you.")
 
     await series.delete()

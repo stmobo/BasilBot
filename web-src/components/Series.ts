@@ -11,7 +11,8 @@ export interface BaseSeries {
     updated?: number,
     url: string,
     warnings: string[],
-    wordcount: number
+    wordcount: number,
+    can_edit: boolean
 }
 
 export interface Series extends BaseSeries {

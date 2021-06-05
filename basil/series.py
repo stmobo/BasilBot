@@ -248,6 +248,12 @@ class Series:
                         return True
         return False
 
+    def can_edit(self, author: author_mod.Author) -> bool:
+        if author.id in self.author_ids:
+            return True
+        else:
+            return self.is_snippet_manager(author)
+
     def wordcount(self) -> int:
         return sum(snippet.wordcount() for snippet in self.snippets)
 

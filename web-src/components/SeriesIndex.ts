@@ -382,7 +382,6 @@ class SeriesEditControls {
 class SeriesIndexEntry {
     root: JQuery;
     series: TrimmedSeries;
-    can_edit: boolean;
 
     titleBar: SeriesTitlebar;
     infoView: SeriesInfoView;
@@ -391,20 +390,8 @@ class SeriesIndexEntry {
     tagInputBar?: TagInputBar;
     editControls?: SeriesEditControls;
 
-    constructor(series: TrimmedSeries, loginInfo: LoginData) {
-        var can_edit = false;
-
-        if (loginInfo.user_data) {
-            for (let author of series.authors) {
-                if (author.id === loginInfo.user_data.id) {
-                    can_edit = true;
-                    break;
-                }
-            }
-        }
-
+    constructor(series: TrimmedSeries) {
         this.series = series;
-        this.can_edit = can_edit;
         this.root = $("<li>", { "class": "series-entry" });
         this.titleBar = new SeriesTitlebar(series);
         this.infoView = new SeriesInfoView(series);
@@ -412,7 +399,7 @@ class SeriesIndexEntry {
         var infoBar = $("<div>", { "class": "series-infobar" }).append(this.infoView.root);
         this.root.append(this.titleBar.root);
 
-        if (can_edit) {
+        if (series.can_edit) {
             this.tagInputBar = new TagInputBar(series);
             this.editControls = new SeriesEditControls(series, this.infoView, this.titleBar, this.tagInputBar);
 
@@ -442,7 +429,7 @@ class SeriesList {
     id: string;
     entries: SeriesIndexEntry[];
 
-    constructor(key: string, keyType: string, seriesList: TrimmedSeries[], loginInfo: LoginData) {
+    constructor(key: string, keyType: string, seriesList: TrimmedSeries[]) {
         this.key = key;
         this.sortKey = key.toLowerCase();
         this.id = keyType + "-index-" + key;
@@ -455,7 +442,7 @@ class SeriesList {
         });
 
         var listElem = addSubelement(this.root, "ul", { "class": "series-list" });
-        this.entries = seriesList.map((s) => new SeriesIndexEntry(s, loginInfo));
+        this.entries = seriesList.map((s) => new SeriesIndexEntry(s));
         listElem.append(this.entries.map((elem) => elem.root));
 
         this.navItem = $("<li>", { "class": "nav-item index-nav-item" });
@@ -469,7 +456,7 @@ class SeriesIndex {
     seriesData: TrimmedSeries[];
     seriesLists: SeriesList[];
 
-    constructor(seriesData: TrimmedSeries[], byAuthor: boolean, loginInfo: LoginData) {
+    constructor(seriesData: TrimmedSeries[], byAuthor: boolean) {
         this.root = $("<div>", { "class": "series-index-wrapper" });
 
         this.tab = $("<li>", { "class": "nav-item" });
@@ -509,7 +496,7 @@ class SeriesIndex {
         }
 
         this.seriesLists = Object.keys(index).map((key) => new SeriesList(
-            key, byAuthor ? "author" : "title", index[key], loginInfo
+            key, byAuthor ? "author" : "title", index[key]
         ));
 
         this.seriesLists.sort((elemA, elemB) => {
@@ -540,13 +527,9 @@ class SeriesIndex {
 }
 
 export default function renderIndices(): Promise<void> {
-    var p1: Promise<TrimmedSeries[]> = fetch("/api/series").then((resp) => resp.json());
-    var p2 = getLoginInfo();
-
-    return Promise.all([p1, p2]).then((val: [TrimmedSeries[], LoginData]) => {
-        var [seriesData, loginInfo] = val;
-        var titleIndex = new SeriesIndex(seriesData, false, loginInfo);
-        var authorIndex = new SeriesIndex(seriesData, true, loginInfo);
+    return fetch("/api/series").then((resp) => resp.json()).then((seriesData: TrimmedSeries[]) => {
+        var titleIndex = new SeriesIndex(seriesData, false);
+        var authorIndex = new SeriesIndex(seriesData, true);
 
         titleIndex.tab.on("click", (ev) => authorIndex.toggleVisible(false));
         authorIndex.tab.on("click", (ev) => titleIndex.toggleVisible(false));
