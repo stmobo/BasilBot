@@ -83,48 +83,14 @@ a, .nav-link {
 
 .series-link {
     font-size: 1.5rem;
+    padding-right: 0.4rem;
 }
 
 .series-authors {
+    display: inline;
     font-size: 1.125rem;
-    padding-left: 0.5rem;
+    padding-left: 0.4rem;
     vertical-align: baseline;
-}
-
-.author-container {
-    display: inline-block;
-}
-
-.author-display-name {
-    text-decoration: underline dotted;
-    cursor: help;
-}
-
-.author-username-container {
-    display: none;
-    color: hsla(210, 3%, 87%, 0.65);
-    line-height: 1.5;
-}
-
-.author-container:hover .author-username-container {
-    display: inline
-}
-
-.author-username, .author-discriminator {
-    font-size: 0.9rem;
-    vertical-align: text-top;
-}
-
-.author-username::before {
-    content: " (";
-}
-
-.author-discriminator::before {
-    content: "#";
-}
-
-.author-discriminator::after {
-    content: ")";
 }
 
 .series-infobar {
@@ -180,6 +146,7 @@ a, .nav-link {
 .series-title-input {
     display: inline;
     width: 33%;
+    margin-right: 0.4rem;
 }
 
 .series-tag-edit-bar {

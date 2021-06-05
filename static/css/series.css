@@ -36,40 +36,9 @@ body {
     font-size: 3.5rem;
 }
 
-.series-author {
+.series-authors {
     display: inline;
     font-size: 1.8rem;
-}
-
-.series-author + .series-author::before {
-    content: ", ";
-}
-
-.series-display-name {
-    margin: 0;
-    text-decoration: underline dotted;
-    cursor: help;
-}
-
-.series-user-name {
-    display: none;
-    margin-left: 0.5rem;
-    font-size: 1.1rem;
-    line-height: 2.25rem;
-    vertical-align: text-bottom;
-    color: hsla(210, 3%, 87%, 0.65);
-}
-
-.series-user-name::before {
-    content: "(";
-}
-
-.series-user-name::after {
-    content: ")";
-}
-
-.series-author:hover .series-user-name {
-    display: inline;
 }
 
 .snippet-container {

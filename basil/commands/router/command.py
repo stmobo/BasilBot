@@ -3,11 +3,8 @@ from __future__ import annotations
 import inspect
 from typing import Optional, List, Tuple, Dict, Iterable, Any
 
-from discord import Member
-
 from . import Trie
 from ..context import CommandContext
-from ... import config
 
 
 class CommandNotFoundError(Exception):

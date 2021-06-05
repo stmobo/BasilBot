@@ -3,17 +3,18 @@ import logging
 
 import aioredis
 import difflib
+import discord
 import json
 import re
-from typing import List, Optional, Union, Set, Dict, AsyncIterator, Iterator
+from typing import Any, List, Optional, Union, Set, Dict, AsyncIterator, Iterator
 import time
 import urllib.parse
 
-from . import config
+from . import author as author_mod
+from .config import config
 from .commands import CommandContext
 from .snippet import Snippet
-from .helper import ensure_redis
-
+from .helper import ContainsRedis, get_client, ensure_redis
 
 SERIES_INDEX_KEY = "series_index"
 
@@ -123,29 +124,29 @@ class Series:
 
     def __init__(
         self,
-        redis: aioredis.Redis,
+        redis: ContainsRedis,
         tag: str,
         author_ids: Set[int],
         snippets: List[Snippet],
         title: Optional[str] = None,
         update_time: Optional[float] = None,
-        subscribers: Optional[Set[int]] = None,
+        subscriber_ids: Optional[Set[int]] = None,
     ):
         tag = tag.strip()
 
         if title is None:
             title = tag.replace("_", " ").replace("-", " ").strip()
 
-        if subscribers is None:
-            subscribers = set()
+        if subscriber_ids is None:
+            subscriber_ids = set()
 
-        self.redis: aioredis.Redis = redis
+        self.redis: aioredis.Redis = ensure_redis(redis)
         self.tag: str = tag
         self.author_ids: Set[int] = author_ids
         self.snippets: List[Snippet] = snippets
         self.title: str = title
         self.update_time: Optional[float] = update_time
-        self.subscribers: Set[int] = subscribers
+        self.subscriber_ids: Set[int] = subscriber_ids
 
     @property
     def redis_prefix(self) -> str:
@@ -154,7 +155,7 @@ class Series:
     @property
     def view_url(self) -> str:
         return urllib.parse.urljoin(
-            config.get().api_base_url, "/series/" + urllib.parse.quote(self.tag)
+            config.api_base_url, "/series/" + urllib.parse.quote(self.tag)
         )
 
     @property
@@ -169,6 +170,46 @@ class Series:
                     seen.add(casefolded)
                     yield cw
 
+    @property
+    def authors(self) -> Iterator[author_mod.Author]:
+        for id in sorted(self.author_ids):
+            yield author_mod.Author.get_by_id(id)
+
+    @property
+    def subscribers(self) -> Iterator[author_mod.Author]:
+        for id in sorted(self.subscriber_ids):
+            yield author_mod.Author.get_by_id(id)
+
+    def _base_dict(self) -> Dict[str, Any]:
+        return {
+            "tag": self.tag,
+            "title": self.title,
+            "authors": [a.as_dict for a in self.authors],
+            "subscribers": [a.as_dict for a in self.subscribers],
+            "updated": self.update_time,
+            "url": self.view_url,
+            "warnings": list(self.content_warnings),
+            "wordcount": self.wordcount(),
+        }
+
+    @property
+    def as_dict_trimmed(self) -> Dict[str, Any]:
+        return dict(
+            self._base_dict(), snippets=[s.as_dict_trimmed for s in self.snippets]
+        )
+
+    @property
+    def as_dict(self) -> Dict[str, Any]:
+        return dict(self._base_dict(), snippets=[s.as_dict for s in self.snippets])
+
+    @property
+    def as_json(self) -> str:
+        return json.dumps(self.as_dict)
+
+    @property
+    def as_json_trimmed(self) -> str:
+        return json.dumps(self.as_dict_trimmed)
+
     def __eq__(self, o: object) -> bool:
         try:
             return self.tag == o.tag
@@ -178,13 +219,42 @@ class Series:
     def __hash__(self) -> int:
         return hash(self.tag)
 
+    def is_snippet_manager(self, author: author_mod.Author) -> bool:
+        if author.is_administrator:
+            return True
+
+        management_role_name: str = config.management_role_name.casefold()
+
+        for snippet in self.snippets:
+            channel: discord.TextChannel = get_client().get_channel(snippet.channel_id)
+            if channel is None:
+                continue
+
+            guild: discord.Guild = channel.guild
+            member: discord.Member = guild.get_member(author.id)
+
+            if member is None:
+                continue
+
+            if (
+                member.guild_permissions.administrator
+                or channel.permissions_for(member).manage_messages
+            ):
+                return True
+
+            if len(management_role_name) > 0:
+                for r in member.roles:
+                    if r.name.strip().casefold() == management_role_name:
+                        return True
+        return False
+
     def wordcount(self) -> int:
         return sum(snippet.wordcount() for snippet in self.snippets)
 
     @classmethod
     async def load(
         cls,
-        redis_or_ctx: Union[aioredis.Redis, CommandContext],
+        redis_or_ctx: ContainsRedis,
         name: str,
     ) -> Series:
         redis = ensure_redis(redis_or_ctx)

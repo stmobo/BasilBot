@@ -24,6 +24,7 @@ RUN chown -R basil:basil /opt/basil/* && chmod u+x /opt/basil/entrypoint.sh
 USER basil
 
 ENV BASIL_CONFIG=/etc/basil/config.json
+COPY ./build/js/static_manifest.json /opt/basil/
 
 # Volume for config files:
 VOLUME /etc/basil

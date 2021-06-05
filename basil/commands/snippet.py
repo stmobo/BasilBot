@@ -2,13 +2,13 @@ from __future__ import annotations
 import logging
 
 import discord
-from typing import Tuple, Union
+from typing import Tuple
 import urllib.parse
 
 from . import command, CommandContext, Command
 from ..snippet import Snippet
 from ..series import SERIES_INDEX_KEY, Series, SeriesNotFound
-from .. import config
+from ..config import config
 
 
 @command("register")
@@ -28,7 +28,7 @@ async def register_snippet(ctx: CommandContext, args: Tuple[str], cmd: Command):
     if len(args) < 1:
         return await ctx.reply(
             "**USAGE:** `"
-            + config.get().summon_prefix
+            + config.summon_prefix
             + "register [series tag]`\nℹ️ This command must be used as a reply to a snippet you have posted."
         )
 
@@ -164,7 +164,7 @@ async def set_title(ctx: CommandContext, args: Tuple[str], cmd: Command):
     if len(args) != 2:
         return await ctx.reply(
             "**USAGE:** `"
-            + config.get().summon_prefix
+            + config.summon_prefix
             + "title [series tag] [series title]`",
         )
 
@@ -200,7 +200,7 @@ async def rename_series(ctx: CommandContext, args: Tuple[str], cmd: Command):
     if len(args) != 2:
         return await ctx.reply(
             "**USAGE:** `"
-            + config.get().summon_prefix
+            + config.summon_prefix
             + "rename [old series tag] [new series tag]`",
         )
 
@@ -241,7 +241,7 @@ async def delete_series(ctx: CommandContext, args: Tuple[str], cmd: Command):
 
     if len(args) != 1:
         return await ctx.reply(
-            "**USAGE:** `" + config.get().summon_prefix + "delete [series tag]`",
+            "**USAGE:** `" + config.summon_prefix + "delete [series tag]`",
         )
 
     tag = args[0]
@@ -275,7 +275,7 @@ async def subscribe_to_series(ctx: CommandContext, args: Tuple[str], cmd: Comman
 
     if len(args) != 1:
         return await ctx.reply(
-            "**USAGE:** `" + config.get().summon_prefix + "subscribe [series tag]`",
+            "**USAGE:** `" + config.summon_prefix + "subscribe [series tag]`",
         )
 
     tag = args[0]
@@ -312,7 +312,7 @@ async def subscribe_to_series(ctx: CommandContext, args: Tuple[str], cmd: Comman
 
     if len(args) != 1:
         return await ctx.reply(
-            "**USAGE:** `" + config.get().summon_prefix + "unsubscribe [series tag]`",
+            "**USAGE:** `" + config.summon_prefix + "unsubscribe [series tag]`",
         )
 
     tag = args[0]
@@ -344,7 +344,7 @@ async def get_link(ctx: CommandContext, args: Tuple[str], cmd: Command):
     """
     if len(args) != 1:
         return await ctx.reply(
-            "**USAGE:** `" + config.get().summon_prefix + "link [series tag]`",
+            "**USAGE:** `" + config.summon_prefix + "link [series tag]`",
         )
 
     tag = args[0]
@@ -368,5 +368,5 @@ async def get_index(ctx: CommandContext, args: Tuple[str], cmd: Command):
     **Usage:** `b!index`
     """
 
-    url = urllib.parse.urljoin(config.get().api_base_url, "/series_index.html")
+    url = urllib.parse.urljoin(config.api_base_url, "/series_index.html")
     return await ctx.reply("ℹ️  **Link to series index:** " + url, ephemeral=False)

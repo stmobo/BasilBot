@@ -6,14 +6,12 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>
-    {{ series_title }} by
-    {% for author in authors %}
-        {{ author.display_name | trim }}{% if not loop.last  %}, {% endif %}
-    {% endfor %}
+    {{ series.title | striptags }} by {{ series.authors | map(attribute="joined_display_names") | join(", ") }}
     </title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
-    <link rel="stylesheet" href="/css/snippet.css">
+    <link rel="stylesheet" href="/css/{{static_manifest.css['common.css']}}">
+    <link rel="stylesheet" href="/css/{{static_manifest.css['series.css']}}">
 </head>
 
 <body>
@@ -47,42 +45,20 @@
         </div>
     </nav>
 
-    <div class="series-header">
-        <h1 class="series-title">{{ series_title }}</h1>
-        <div class="series-authors">
-            {% for author in authors %}
-            <span class="series-author"><span class="series-display-name">{{ author.display_name | trim }}</span><span class="series-user-name">{{ author.username | trim }}#{{ author.discriminator }}</span></span>
-            {% endfor %}
-        </div>
-    </div>
-
-    <hr class="snippet-separator">
-
-    {% for snippet in snippets %}
-
-    <div class="snippet-container">
-        <div class="snippet" id="snippet-{{ snippet.message_id }}"></div>
-    </div>
-
-    <hr class="snippet-separator">
-
-    {% endfor %}
+    <div id="view-container"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4"
         crossorigin="anonymous"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.slim.min.js"
-        integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI=" crossorigin="anonymous"></script>
-    <script src="/js/discord-markdown.min.js"></script>
-    <script src="/js/common.js"></script>
-    <script src="/js/series.js"></script>
+
+    {% for filename in static_manifest.js.values() %}
+    <script src="/js/{{filename}}"></script>
+    {% endfor %}
+
     <script>
         document.addEventListener("DOMContentLoaded", function (ev) {
-        
-        {% for snippet in snippets %}
-            renderSnippet("{{ snippet.message_id }}", {{ snippet.escaped_content }}, {{ snippet.json_attachment_urls }});
-        {% endfor %}
-
+            Basil.getLoginInfo();
+            Basil.renderSeries({{ series.as_json }});
         });
     </script>
 </body>

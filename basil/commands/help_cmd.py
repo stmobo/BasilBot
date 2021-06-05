@@ -6,13 +6,13 @@ from .router import (
     CommandNotAuthorizedError,
 )
 from .context import CommandContext
-from .. import config
+from ..config import config
 
 from typing import Tuple
 
 
 async def specific_cmd_help(ctx: CommandContext, args: Tuple[str], _cmd: Command):
-    summon_prefix: str = config.get().summon_prefix
+    summon_prefix: str = config.summon_prefix
 
     try:
         cmd, _ = COMMANDS.route(ctx, args)
@@ -41,7 +41,7 @@ async def help_cmd(ctx: CommandContext, args: Tuple[str], cmd: Command):
 
     lines = [
         "**Basil Command List:**",
-        "Commands must be prefixed with `{}`.".format(config.get().summon_prefix),
+        "Commands must be prefixed with `{}`.".format(config.summon_prefix),
     ]
 
     for cmd in COMMANDS.visible_subrouters(ctx.authorized):

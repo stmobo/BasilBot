@@ -6,7 +6,7 @@ import discord
 import logging
 from typing import Optional
 
-from . import config
+from .config import config
 from . import commands
 from . import web
 from .snippet import Snippet, SnippetNotFound, scan_message_channels
@@ -48,7 +48,7 @@ class BasilClient(discord.Client):
         ctr = 0
         while True:
             try:
-                if config.get().maintenance_mode:
+                if config.maintenance_mode:
                     await self.change_presence(
                         activity=discord.Game("Maintenance Mode")
                     )
@@ -64,7 +64,7 @@ class BasilClient(discord.Client):
                             activity=discord.Game(str(author_count) + " Authors")
                         )
                     elif ctr == 2:
-                        prefix = config.get().summon_prefix
+                        prefix = config.summon_prefix
                         await self.change_presence(
                             activity=discord.Game(prefix + "help")
                         )
@@ -82,7 +82,7 @@ class BasilClient(discord.Client):
         )
 
         self.redis = aioredis.from_url(
-            config.get().primary_redis_url, encoding="utf-8", decode_responses=True
+            config.primary_redis_url, encoding="utf-8", decode_responses=True
         )
 
         await check_series_schema(self.redis)
@@ -125,7 +125,7 @@ async def start_bot(app, loop):
 
     # Initialize logging handlers:
     handler = logging.FileHandler(
-        filename=config.get().discord_log, encoding="utf-8", mode="w"
+        filename=config.discord_log, encoding="utf-8", mode="w"
     )
     handler.setFormatter(
         logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s")
@@ -139,7 +139,7 @@ async def start_bot(app, loop):
     bot_root_logger.addHandler(handler)
 
     app.ctx.client = client
-    app.add_task(client.start(config.get().token))
+    app.add_task(client.start(config.token))
 
 
 def app_main():

@@ -1,0 +1,35 @@
+.author-container {
+    display: inline-block;
+}
+
+.author-display-name {
+    text-decoration: underline dotted;
+    cursor: help;
+}
+
+.author-username-container {
+    display: none;
+    color: hsla(210, 3%, 87%, 0.65);
+    line-height: 1.5;
+}
+
+.author-container:hover .author-username-container {
+    display: inline
+}
+
+.author-username, .author-discriminator {
+    font-size: 0.9em;
+    vertical-align: text-top;
+}
+
+.author-username::before {
+    content: " (";
+}
+
+.author-discriminator::before {
+    content: "#";
+}
+
+.author-discriminator::after {
+    content: ")";
+}

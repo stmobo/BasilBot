@@ -6,7 +6,7 @@ services:
         build: ./dev-web
         restart: always
         volumes:
-            - ./static:/usr/share/nginx/html
+            - ./build:/usr/share/nginx/html
         ports:
             - "127.0.0.1:8080:80"
         depends_on:

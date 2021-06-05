@@ -10,7 +10,6 @@ from schema import Schema, And, Optional, SchemaError
 import urllib.parse
 
 from ...series import Series, SeriesNotFound, SERIES_INDEX_KEY
-from .. import helper
 from .auth import DiscordUserInfo
 
 series_api = Blueprint("series_api", url_prefix="/series")
@@ -37,19 +36,7 @@ async def get_all_series(_req: Request):
         except SeriesNotFound:
             continue
 
-        authors = [helper.author_id_to_object(client, id) for id in series.author_ids]
-        ret.append(
-            {
-                "tag": tag,
-                "title": series.title.strip(),
-                "n_snippets": len(series.snippets),
-                "wordcount": series.wordcount(),
-                "authors": authors,
-                "url": app.url_for("view.series", name=urllib.parse.quote(tag)),
-                "updated": series.update_time,
-                "warnings": sorted(series.content_warnings),
-            }
-        )
+        ret.append(series.as_dict_trimmed)
 
     return response.json(ret)
 
@@ -66,36 +53,6 @@ class SeriesView(HTTPMethodView):
         )
     )
 
-    @staticmethod
-    def respond_with_series(series: Series, **kwargs) -> response.HTTPResponse:
-        client: discord.Client = app.ctx.client
-
-        snippets = []
-        for snippet in series.snippets:
-            snippets.append(
-                {
-                    "content": snippet.content,
-                    "message_id": snippet.message_id,
-                    "author_id": snippet.author_id,
-                    "channel_id": snippet.channel_id,
-                    "attachment_urls": snippet.attachment_urls,
-                }
-            )
-
-        authors = [helper.author_id_to_object(client, id) for id in series.author_ids]
-        return response.json(
-            {
-                "tag": series.tag,
-                "title": series.title.strip(),
-                "snippets": snippets,
-                "authors": authors,
-                "url": app.url_for("view.series", name=urllib.parse.quote(series.tag)),
-                "updated": series.update_time,
-                "warnings": sorted(series.content_warnings),
-            },
-            **kwargs
-        )
-
     async def get(self, req: Request, tag: str):
         tag = urllib.parse.unquote(tag)
 
@@ -104,7 +61,7 @@ class SeriesView(HTTPMethodView):
         except SeriesNotFound:
             raise exceptions.NotFound("Could not find series " + tag)
 
-        return SeriesView.respond_with_series(series)
+        return response.json(series.as_dict)
 
     async def patch(self, req: Request, tag: str):
         tag = urllib.parse.unquote(tag)
@@ -167,7 +124,7 @@ class SeriesView(HTTPMethodView):
             series.snippets = new_snippet_seq
             await series.save()
 
-        return SeriesView.respond_with_series(series)
+        return response.json(series.as_dict)
 
     async def delete(self, req: Request, tag: str):
         tag = urllib.parse.unquote(tag)

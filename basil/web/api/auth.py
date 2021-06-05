@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 import logging
-from typing import Optional, Dict, Any, Tuple, List
+from typing import Optional
 import secrets
-import urllib.parse
 
 import aiohttp
 from aioredis import Redis
@@ -16,9 +14,9 @@ from sanic import Sanic, Blueprint, response, exceptions
 from sanic.request import Request
 from sanic.response import HTTPResponse
 
-from ... import config
+from ...config import config
 from ..oauth2 import OAuth2API, OAuth2Context
-from .. import helper
+from ... import author
 
 SESSION_COOKIE_ID = "session"
 REDIS_KEY_PREFIX = "auth:sessions:"
@@ -26,7 +24,7 @@ DISCORD_API_URL = "https://discordapp.com/api/v9"
 REQUIRED_SCOPES = "identify"
 
 cookie_signer = Signer(
-    bytes.fromhex(config.get().cookie_signer_key), digest_method=hashlib.sha256
+    bytes.fromhex(config.cookie_signer_key), digest_method=hashlib.sha256
 )
 auth_api = Blueprint("auth_api", url_prefix="/auth")
 app = Sanic.get_app("basil")
@@ -35,9 +33,9 @@ oauth2_api = OAuth2API(
     DISCORD_API_URL + "/oauth2/authorize",
     DISCORD_API_URL + "/oauth2/token",
     DISCORD_API_URL + "/oauth2/token/revoke",
-    config.get().oauth2_redirect_uri,
-    config.get().client_id,
-    config.get().client_secret,
+    config.oauth2_redirect_uri,
+    config.client_id,
+    config.client_secret,
     "discord",
 )
 
@@ -51,34 +49,9 @@ class DiscordUserInfo(object):
         self.id: int = int(user_id)
         self.ctx: OAuth2Context = ctx
 
-    def get_member_names(self) -> Tuple[List[str], str, str]:
-        return helper.get_member_names(app.ctx.client, self.id)
-
-    def is_snippet_manager(self) -> bool:
-        primary_guild: discord.Guild = app.ctx.client.get_guild(
-            config.get().primary_server_id
-        )
-        member: discord.Member = primary_guild.get_member(self.id)
-
-        if member is None:
-            return False
-
-        if member.guild_permissions.administrator:
-            return True
-
-        management_role_name: str = config.get().management_role_name.strip().casefold()
-        for role in member.roles:
-            if role.permissions.administrator or (
-                len(management_role_name) > 0
-                and role.name.strip().casefold() == management_role_name
-            ):
-                return True
-        return False
-
-    def as_dict(self) -> Dict[str, Any]:
-        ret = helper.author_id_to_object(app.ctx.client, self.id)
-        ret["is_manager"] = self.is_snippet_manager()
-        return ret
+    @property
+    def as_author(self) -> author.Author:
+        return author.Author.get_by_id(self.id)
 
     async def save(self):
         redis: Redis = app.ctx.redis
@@ -195,11 +168,11 @@ async def get_login_data(request: Request):
 
     data = {
         "session_id": request.ctx.session,
-        "dev_mode": config.get().dev_mode,
+        "dev_mode": config.dev_mode,
     }
 
     if discord_user is not None:
-        data["user_data"] = discord_user.as_dict()
+        data["user_data"] = discord_user.as_author.as_dict
     else:
         data["user_data"] = None
 
@@ -211,14 +184,14 @@ async def logout(request: Request):
     discord_ctx: OAuth2Context = await oauth2_api.load_request_context(request)
 
     await discord_ctx.reset()
-    return response.redirect(config.get().login_redirect_target, status=303)
+    return response.redirect(config.login_redirect_target, status=303)
 
 
 @auth_api.get("/login")
 async def start_oauth2(request: Request):
     discord_ctx: OAuth2Context = await oauth2_api.load_request_context(request)
     return await discord_ctx.start(
-        REQUIRED_SCOPES, config.get().login_redirect_target, prompt="none"
+        REQUIRED_SCOPES, config.login_redirect_target, prompt="none"
     )
 
 

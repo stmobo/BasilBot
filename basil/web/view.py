@@ -6,7 +6,7 @@ from sanic import Sanic, Blueprint, Request, response, exceptions
 import urllib.parse
 
 from ..series import Series, SeriesNotFound
-from . import helper
+from ..config import config
 
 view = Blueprint("view", url_prefix="/series")
 app = Sanic.get_app("basil")
@@ -24,13 +24,7 @@ async def series(_req: Request, name: str):
     except SeriesNotFound:
         raise exceptions.NotFound("Could not find series " + name)
 
-    client: discord.Client = app.ctx.client
-    authors = [helper.author_id_to_object(client, id) for id in series.author_ids]
-
     rendered = series_template.render(
-        snippets=series.snippets,
-        series_name=series.tag,
-        series_title=series.title,
-        authors=authors,
+        series=series, static_manifest=config.static_manifest
     )
     return response.html(rendered)

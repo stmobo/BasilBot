@@ -4,7 +4,7 @@ import aiohttp
 import aioredis
 from sanic import Sanic
 
-from .. import config
+from ..config import config
 
 app = Sanic("basil")
 
@@ -13,7 +13,7 @@ app = Sanic("basil")
 async def setup_redis(app, loop):
     app.ctx.http_session = aiohttp.ClientSession()
     app.ctx.redis = aioredis.from_url(
-        config.get().primary_redis_url, encoding="utf-8", decode_responses=True
+        config.primary_redis_url, encoding="utf-8", decode_responses=True
     )
 
 

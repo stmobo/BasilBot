@@ -12,7 +12,8 @@ from .router import (
     CommandNotAuthorizedError,
 )
 
-from .. import main, config
+from ..config import config
+from .. import main
 from .context import CommandContext
 
 
@@ -70,9 +71,9 @@ def global_alias(aliases: Iterable[str], *, shortcuts: Iterable[str] = tuple()):
 
 async def dispatch(client: main.BasilClient, msg: discord.Message):
     ctx = CommandContext(client, msg)
-    summon_prefix: str = config.get().summon_prefix
+    summon_prefix: str = config.summon_prefix
 
-    if config.get().maintenance_mode and not ctx.authorized:
+    if config.maintenance_mode and not ctx.authorized:
         return
 
     # Check for summoning prefix:

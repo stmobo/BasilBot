@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import aioredis
 import discord
-from typing import Tuple
 
-from .. import main, config
+from ..config import config
+from .. import main
 
 
 class CommandContext(object):
@@ -30,14 +30,18 @@ class CommandContext(object):
 
     @property
     def authorized(self) -> bool:
+        if self.user.guild_permissions.administrator:
+            return True
+
         perms = self.channel.permissions_for(self.user)
         if perms.manage_messages or perms.administrator:
             return True
 
-        management_role_name: str = config.get().management_role_name.strip().casefold()
+        management_role_name: str = config.management_role_name.strip().casefold()
         if len(management_role_name) > 0:
             return any(
-                r.name.strip().casefold() == management_role_name for r in self.user.roles
+                r.name.strip().casefold() == management_role_name
+                for r in self.user.roles
             )
         else:
             return False

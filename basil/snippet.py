@@ -1,12 +1,11 @@
 from __future__ import annotations
-from operator import eq
 
 import aioredis
 import discord
 import logging
 import json
 import re
-from typing import Optional, Union, List, Iterator
+from typing import Any, Dict, Optional, Union, List, Iterator
 import urllib
 
 from discord.errors import Forbidden, NotFound
@@ -55,6 +54,30 @@ class Snippet:
     def content_warnings(self) -> Iterator[str]:
         for match in re.finditer(CW_REGEX, self.content, re.MULTILINE):
             yield match[1].strip()
+
+    @property
+    def as_dict_trimmed(self) -> Dict[str, Any]:
+        return {
+            "author_id": self.author_id,
+            "message_id": self.message_id,
+            "channel_id": self.channel_id,
+        }
+
+    @property
+    def as_dict(self) -> Dict[str, Any]:
+        return dict(
+            self.as_dict_trimmed,
+            content=self.content,
+            attachment_urls=self.attachment_urls,
+        )
+
+    @property
+    def as_json(self) -> str:
+        return json.dumps(self.as_dict)
+
+    @property
+    def as_json_trimmed(self) -> str:
+        return json.dumps(self.as_dict_trimmed)
 
     def wordcount(self) -> int:
         stripped = re.sub(
