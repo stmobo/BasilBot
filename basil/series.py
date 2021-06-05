@@ -425,7 +425,8 @@ class Series:
 
             tr.set(self.redis_prefix + ":authors", json.dumps(list(self.author_ids)))
             tr.set(
-                self.redis_prefix + ":subscribers", json.dumps(list(self.subscribers))
+                self.redis_prefix + ":subscribers",
+                json.dumps(list(self.subscriber_ids)),
             )
 
             if update_time:
