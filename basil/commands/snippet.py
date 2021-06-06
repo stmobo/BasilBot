@@ -135,7 +135,7 @@ async def register_snippet(ctx: CommandContext, args: Tuple[str], cmd: Command):
             "⚠️  **Warning:** Your snippet tag has spaces in it. You'll need to **surround the tag name with quotes** if you're using it in other commands!"
         )
 
-    for subscriber_id in series.subscribers:
+    for subscriber_id in series.subscriber_ids:
         user: discord.User = ctx.client.get_user(subscriber_id)
 
         if user is None:
@@ -291,8 +291,8 @@ async def subscribe_to_series(ctx: CommandContext, args: Tuple[str], cmd: Comman
             "❌  There exists no series going by the tag `{}`.".format(tag)
         )
 
-    if ctx.user.id not in series.subscribers:
-        series.subscribers.add(ctx.user.id)
+    if ctx.user.id not in series.subscriber_ids:
+        series.subscriber_ids.add(ctx.user.id)
         await series.save(update_time=False)
 
         return await ctx.reply(
@@ -328,8 +328,8 @@ async def subscribe_to_series(ctx: CommandContext, args: Tuple[str], cmd: Comman
             "❌  There exists no series going by the tag `{}`.".format(tag)
         )
 
-    if ctx.user.id in series.subscribers:
-        series.subscribers.remove(ctx.user.id)
+    if ctx.user.id in series.subscriber_ids:
+        series.subscriber_ids.remove(ctx.user.id)
         await series.save(update_time=False)
 
         return await ctx.reply(
