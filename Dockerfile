@@ -1,10 +1,11 @@
 FROM python:3.8
 
 RUN useradd -ms /bin/bash basil
-RUN mkdir -p /opt/basil /etc/basil /var/log/basil && \
+RUN mkdir -p /opt/basil /etc/basil /var/log/basil /opt/basil/static && \
     chown -R basil:basil /opt/basil && \
     chown -R basil:basil /etc/basil && \
-    chown -R basil:basil /var/log/basil
+    chown -R basil:basil /var/log/basil && \
+    chown -R basil:basil /opt/basil/static
 
 WORKDIR /opt/basil
 
@@ -24,7 +25,9 @@ RUN chown -R basil:basil /opt/basil/* && chmod u+x /opt/basil/entrypoint.sh
 USER basil
 
 ENV BASIL_CONFIG=/etc/basil/config.json
-COPY ./build/js/static_manifest.json /opt/basil/
+
+# Volume for static files:
+VOLUME /opt/basil/static
 
 # Volume for config files:
 VOLUME /etc/basil

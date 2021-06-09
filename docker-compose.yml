@@ -15,6 +15,7 @@ services:
         build: ./
         volumes:
             - ./test-config:/etc/basil
+            - ./build:/opt/basil/static
         depends_on:
             - redis
     redis:
