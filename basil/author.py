@@ -27,12 +27,17 @@ def get_member_names(user_id: int) -> Tuple[Set[str], str, str]:
         discriminator = member.discriminator
 
     if username is None:
-        loop = asyncio.get_running_loop()
-        user = loop.run_until_complete(get_client().fetch_user(user_id))
+        # todo: fix this
+        username = "User " + str(user_id)
+        discriminator = "????"
+        display_names.add(username)
 
-        username = user.name
-        discriminator = user.discriminator
-        display_names.add(user.display_name)
+    #     loop = asyncio.get_running_loop()
+    #     user = loop.run_until_complete(get_client().fetch_user(user_id))
+
+    #     username = user.name
+    #     discriminator = user.discriminator
+    #     display_names.add(user.display_name)
 
     return display_names, username, discriminator
 
